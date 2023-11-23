@@ -1,0 +1,53 @@
+---
+title: Get Page Template for Post in WordPress Admin
+date: "2016-05-05T13:55:49.121Z"
+---
+
+You can get the filename of the page template that the post in the WordPress admin is set to using:
+
+```php
+$page_template = get_post_meta( $post->ID, '_wp_page_template', true );
+```
+
+The function below gets the filename of the page template, then returns `true` if it matches the desired page template, or `false` if not. This is useful if you want to run code in the WordPress admin only for posts that are set to use a particular page template. Just replace `abc-123.php` with the filename of the template you want to check against.
+
+```php
+/**
+ * Return true if abc-123 page template is being used, else false.
+ *
+ * @return bool Whether abc-123 page template is being used.
+ */
+function km_is_abc_123_template() {
+
+   global $post;
+
+   if ( ! $post ) {
+      return false;
+   }
+
+   return 'abc-123.php' === get_post_meta( $post->ID, '_wp_page_template', true );
+}
+```
+
+Here’s a more general version of that function that allows you to pass in the filename of a particular page template to check against:
+
+```php
+/**
+ * Return true if page template is being used, else false.
+ *
+ * @param  string $page_template The filename of the template to check against.
+ *                               Example: 'abc-123.php'.
+ *
+ * @return bool                  Whether page template is being used.
+ */
+function km_is_page_template( $page_template ) {
+
+   global $post;
+
+   if ( ! $post ) {
+      return false;
+   }
+
+   return $page_template === get_post_meta( $post->ID, '_wp_page_template', true );
+}
+```

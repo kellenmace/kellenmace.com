@@ -1,0 +1,42 @@
+---
+title: Get Root Domain of a WordPress Multisite Network
+date: "2016-08-19T22:53:58.121Z"
+---
+
+The functions below can be used to get the root domain of a WordPress site. If the site is a multisite network and you’re on `http://www.site1.example.com/page-1/`, calling `km_get_root_domain()` would return `example.com` for instance. It also works on single-site WP installations.
+
+```php
+/**
+ * Get the root domain of the site/network.
+ *
+ * @return string|bool The root domain or false on failure.
+ */
+function km_get_root_domain() {
+
+	$url_parts = parse_url( km_get_main_site_url() );
+
+	if ( $url_parts && isset( $url_parts['host'] ) ) {
+		return $url_parts['host'];
+	}
+
+	return false;
+}
+
+/*
+ * Get the home URL of the main site.
+ *
+ * @return string The home URL of the main site.
+ */
+function km_get_main_site_url() {
+
+	// This is the current network's information; 'site' is old terminology.
+	global $current_site;
+
+	if ( is_multisite() && $current_site ) {
+		$main_site_blog_id = $current_site->blog_id;
+		return get_home_url( $main_site_blog_id );
+	}
+
+	return home_url();
+}
+```

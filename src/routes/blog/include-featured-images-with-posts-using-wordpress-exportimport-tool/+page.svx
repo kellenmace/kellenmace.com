@@ -1,0 +1,26 @@
+---
+title: Include Featured Images with Posts Using WordPress Export/Import Tool
+date: "2017-02-08T22:32:24.121Z"
+---
+
+<script>
+  import exportFeaturedImages from './export-featured-images.jpg';
+  import comments from './comments.jpg';
+</script>
+
+When you use the basic WordPress XML Export/Import tool to migrate blog posts between two WordPress sites, their featured images will likely not be included, as silly and counterintuitive as that sounds. In [this post by Morten Rand-Hendriksen](https://mor10.com/wordpress-importer-not-importing-attachments-try-exporting-all-statuses/), he offers one possible solution:
+
+> Instead of setting Statuses to ‘Published’ I set it to the default `All Statuses`
+
+Recently (on Feb 7, 2017) I tried doing just that though, and the featured images still were not exported. The solution that ended up working for me after after some searching and trial and error is outlined below. Note that doing it this way only works if the post IDs from the site the posts originally came from are identical (have stayed the same) as the post IDs on the destination site.
+
+1. Use the WP Export/Import tool to migrate the posts, knowing that the featured images wont’ be included.
+1. Install and use the [Export Featured Images](https://wordpress.org/plugins/export-featured-images/) plugin on the site the featured images are coming from. After activating, you’ll need to go to `Tools` > `Export Featured Images` and choose which post types to include. It will export an XML file that you can import into the other site using the WP Import tool. Then just do a spot check on your posts to make sure their featured images have been both imported and attached to the correct posts.
+
+<img src={exportFeaturedImages} alt="export featured images" />
+
+Another possible solution would have been to export `All content`, which does include featured images, then manually edit the XML file and delete everything you don’t want included. This is tedious and prone to error though, so I wouldn’t recommend it.
+
+Beyond the things mentioned above, a more robust migration script could be used, but that seems like overkill to do something as simple as migrating Posts from one WordPress site to another.
+
+<img src={comments} alt="comments" />

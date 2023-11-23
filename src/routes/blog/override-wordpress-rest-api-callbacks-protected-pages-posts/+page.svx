@@ -1,0 +1,163 @@
+---
+title: Override WordPress REST API Callbacks for Protected Pages or Posts
+date: "2018-07-07T18:40:44.121Z"
+---
+
+I was recently working on a headless WordPress project. It has a React frontend that uses the WP REST API to communicate with the WP backend. I had some pages that I needed to only be accessible to logged-in users, and was looking for a way to lock down access to those pages. By default, WordPress allows anybody (logged-in and logged-out users alike) to fetch `page` data from REST API requests like these:
+
+```
+domain.com/wp-json/wp/v2/pages/123
+```
+
+```
+domain.com/wp-json/wds/v1/page?slug=some-page-slug
+```
+
+What we’ll do in the following code snippets is modify that behavior so that the REST API only exposes protected `page`s to logged in users. Note that the examples below show checking if a `_is_protected_content` post meta key is set to true to determine whether the `page` is protected, but you could just as easily check if the `page` has a certain category/tag/taxonomy term/etc. instead, if needed.
+
+## Set up a custom REST API controller class for the Page post type
+
+When WordPress registers its built-in `page` and `post` post types, it sets both of them up to use the `WP_REST_Posts_Controller` class to handle REST API requests. We’ll add a filter to set the `page` post type to use a `KM_REST_Pages_Controller` class that we’ll create instead.
+
+```php
+/**
+ * Set up a custom REST API controller class for the Page post type.
+ *
+ * @author Kellen Mace
+ *
+ * @param  array  $args The post type arguments.
+ * @param  string $name The name of the post type.
+ *
+ * @return array $args The post type arguments, possibly modified.
+ */
+function km_set_custom_page_rest_controller( $args, $name ) {
+	// If this post type's name is not 'page', do not modify its args.
+	if ( 'page' !== $name ) {
+		return $args;
+	}
+
+	// Tell WordPress to use our KM_REST_Pages_Controller class
+	// for Page REST API requests.
+	$args['rest_controller_class'] = 'KM_REST_Pages_Controller';
+
+	return $args;
+}
+add_filter( 'register_post_type_args', 'km_set_custom_page_rest_controller', 10, 2 );
+```
+
+Once that’s in place, we can now define our `KM_REST_Pages_Controller` class. It will extend the `WP_REST_Posts_Controller` class and inherit all of its functionality, except for the `get_item_permissions_check()` method, which we will override. Our version of that method will include an additional check to make sure the current user should be able to access the post before allowing them to. The only new code here is on lines 20-30 – all the rest of the code is identical to the `get_item_permissions_check()` method inside of the `WP_REST_Posts_Controller` class.
+
+```php
+/**
+ * Class to access pages via the REST API.
+ *
+ * @author Kellen Mace
+ *
+ * @see WP_REST_Posts_Controller
+ * @see WP_REST_Controller
+ */
+class KM_REST_Pages_Controller extends WP_REST_Posts_Controller {
+
+	/**
+	 * Checks if a given request has access to read a page.
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error True if the request has read access for the item, WP_Error object otherwise.
+	 */
+	public function get_item_permissions_check( $request ) {
+		// Here we're checking a _is_protected_content post meta value
+		// to determine whether this page is considered protected content.
+		$protected = get_post_meta( $request['id'], '_is_protected_content', true );
+
+		// If this is a protected page and the user is not logged in,
+		// don't allow them to access it.
+		// If desired, you could go a step further and check if they
+		// have a certain role/capabilities.
+		if ( $protected && ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to view posts in this post type.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		$post = $this->get_post( $request['id'] );
+		if ( is_wp_error( $post ) ) {
+			return $post;
+		}
+
+		if ( 'edit' === $request['context'] && $post && ! $this->check_update_permission( $post ) ) {
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to edit this post.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		if ( $post && ! empty( $request['password'] ) ) {
+			// Check post password, and return error if invalid.
+			if ( ! hash_equals( $post->post_password, $request['password'] ) ) {
+				return new WP_Error( 'rest_post_incorrect_password', __( 'Incorrect post password.' ), array( 'status' => 403 ) );
+			}
+		}
+
+		// Allow access to all password protected posts if the context is edit.
+		if ( 'edit' === $request['context'] ) {
+			add_filter( 'post_password_required', '__return_false' );
+		}
+
+		if ( $post ) {
+			return $this->check_read_permission( $post );
+		}
+
+		return true;
+	}
+}
+```
+
+Now, when a REST API request for an individual `page`, like `domain.com/wp-json/wp/v2/pages/123` comes in, WordPress will serve up that `page`’s content if the user is logged in. Otherwise, an error response will be given with a message of `Sorry, you are not allowed to view posts in this post type`.
+
+## Limit Pages REST API requests to users with the required permissions
+
+At this point, requests for `page`s (plural) are still not protected. To fix that, we’ll implement a filter to tell WordPress that whenever it’s about to query the database for a REST API request for `page`s, the the user isn’t logged in, it should exclude protected `page`s from the query.
+
+```php
+/**
+ * Limit a Pages post collection request to only users with the required permissions.
+ *
+ * @author Kellen Mace
+ *
+ * @param  array $args Key value array of query var to query value.
+ *
+ * @return array $args Key value array of query var to query value, possibly modified.
+ */
+function km_limit_rest_api_read_access_to_protected_pages( $args ) {
+	// If this user is logged in, then query for Pages as usual,
+	// including both those that are protected and those that aren't.
+	// If desired, you could go a step further and check if they
+	// have a certain role/capabilities.
+	if ( is_user_logged_in() ) {
+		return $args;
+	}
+
+	// If the user is not logged in, modify the query to only include
+	// Pages that are not protected.
+	$args['meta_query'][] = [
+		'key'     => '_is_protected_content',
+		'value'   => true,
+		'compare' => '!=',
+	];
+	$args['meta_query']['relation'] = 'AND';
+
+	return $args;
+}
+add_filter( 'rest_page_query', 'km_limit_rest_api_read_access_to_protected_pages' );
+```
+
+Now requests for `page`s (a.k.a. `page` post collection requests) like `domain.com/wp-json/wds/v1/page?slug=some-page-slug` are also protected. If a user is logged in, they’ll get all `page`s in the response. If they’re not, they’ll only get the `page`s that are not protected in the response.
+
+## Checking for a User’s Role or Capabilities Instead
+
+In these examples, I’m simply checking if the user is currently logged in to determine whether protected content should be included in the response. If you want to take things a step further and check whether the user has a certain role or certain capabilities, you can use checks like `current_user_can( 'administrator' )`, `current_user_can( 'edit_posts' )`, and so on. More info on roles and capabilities is available here: [https://codex.wordpress.org/Roles_and_Capabilities](https://codex.wordpress.org/Roles_and_Capabilities).
+
+## Modifying the Post post type Response
+
+The code snippets I’ve shared involve modifying the REST API response for `page`s, but the same could easily be done for `post`s, as well. To do that, you would need to:
+
+1. Change `if ( 'page' !== $name )` to `if ( 'post' !== $name )` on line 15 of the first snippet
+1.Change the `KM_REST_Pages_Controller` class name in the first and second code snippets to something like `KM_REST_Pages_Controller` instead.
+1. Change `add_filter( 'rest_page_query'` on line 32 of the third code snippet to `add_filter( 'rest_page_query'`.
+
+I hope some folks find this useful! Happy coding.

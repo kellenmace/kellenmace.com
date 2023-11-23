@@ -1,0 +1,137 @@
+---
+title: Find All Pages that Contain a Gravity Form
+date: "2019-03-29T15:33:17.121Z"
+---
+
+<script>
+  import gravityFormShortcodeLocator from './gravity-form-shortcode-locator.jpg';
+</script>
+
+The class below can be used to locate all the pages that contain a specific Gravity Form. It searches the post content of each page. If the `gravityform` shortcode is found and it has the specific `id` that we’re looking for, that page is added to the list.
+
+## Example Usage
+
+It can be used like this:
+
+```php
+// Require the file that contains the GravityFormsShortcodeFinder class.
+require_once plugin_dir_path( __FILE__ ) . 'src/GravityFormsShortcodeFinder.php';
+
+// Find all the pages that contain the Gravity Forms with an ID of 36.
+$pages_with_form = ( new Gravity_Forms_Shortcode_Finder( 36 ) )->find();
+```
+
+The resulting array looks like this:
+
+<img src={gravityFormShortcodeLocator} alt="Gravity Forms shortcode locator" />
+
+The array keys are the pages’ post IDs and the values are the pages’ names. This allows you to quickly tell which pages contain a particular Gravity Form.
+
+## The Class
+
+```php
+/**
+ * Finds pages that contain a particular Gravity Form.
+ */
+class Gravity_Forms_Shortcode_Finder {
+	/**
+	 * ID of the Gravity Form to search for.
+	 *
+	 * @var int
+	 */
+	private $form_id;
+
+	/**
+	 * @param int $form_id ID of the Gravity Form to search for.
+	 */
+	public function __construct( $form_id ) {
+		$this->form_id = (int) $form_id;
+	}
+
+	/**
+	 * @return array Pages that contain the form. Array is in this format: $post_id => $post_title
+	 */
+	public function find() {
+		return array_reduce( $this->get_all_page_ids(), function( $pages, $page_id ) {
+			if ( in_array( $this->form_id, $this->get_form_ids_in_post_content( $page_id ), true ) ) {
+				$pages[ $page_id ] = get_the_title( $page_id );
+			}
+	
+			return $pages;
+		}, [] );
+	}
+
+	/**
+	 * @return array Post IDs for all pages.
+	 */
+	private function get_all_page_ids() {
+		return ( new WP_Query( [
+			'post_type'              => 'page',
+			'posts_per_page'         => 1000,
+			'no_found_rows'          => true,
+			'fields'                 => 'ids',
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+		] ) )->get_posts();
+	}
+
+	/**
+	 * @param  int $page_id Page ID.
+	 *
+	 * @return array Gravity Form IDs.
+	 */
+	private function get_form_ids_in_post_content( $page_id ) {
+		$content = get_post_field( 'post_content', $page_id );
+
+		return $this->get_shortcode_ids( $this->get_shortcodes_from_content( $content, 'gravityform' ) );
+	}
+
+	/**
+	 * @param  string $content   Post content.
+	 * @param  string $shortcode The shortcode to search for.
+	 *
+	 * @return array  The shortcodes found or empty array if none.
+	 */
+	private function get_shortcodes_from_content( $content, $shortcode ) {
+		$matches_found = preg_match_all( '/' . get_shortcode_regex() . '/s', $content, $matches );
+
+		if ( ! $matches_found || empty( $matches[2] ) || ! in_array( $shortcode, $matches[2], true ) ) {
+			return [];
+		}
+
+		return $matches[0];
+	}
+
+	/**
+	 * Extracts IDs from shortcodes.
+	 *
+	 * @param string $shortcodes The shortcodes to get the IDs from.
+	 *
+	 * @return array $ids        The shortcode IDs.
+	 */
+	private function get_shortcode_ids( array $shortcodes ) {
+		return array_reduce( $shortcodes, function( $ids, $shortcode ) {
+			$id = $this->get_shortcode_id( $shortcode );
+
+			if ( $id ) {
+				$ids[] = $id;
+			}
+
+			return $ids;
+		}, [] );
+	}
+
+	/**
+	 * Extract the 'id' parameter from a shortcode.
+	 *
+	 * @param  string $shortcode The shortcode.
+	 *
+	 * @return int The ID, or 0 if none found.
+	 */
+	private function get_shortcode_id( $shortcode ) {
+		$match_found = preg_match( '~id=[\"\']?([^\"\'\s]+)[\"\']?~i', $shortcode, $form_id );
+
+		return $match_found ? (int) $form_id[1] : 0;
+	}
+}
+```

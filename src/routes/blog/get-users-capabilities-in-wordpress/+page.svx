@@ -1,0 +1,31 @@
+---
+title: Get User’s Capabilities in WordPress
+date: "2016-05-05T17:47:30.121Z"
+---
+
+<script>
+  import capabilities from './capabilities.png';
+</script>
+
+The function below can be used to get all  of a user’s capabilities:
+
+```php
+/**
+ * Get user's capabilities.
+ *
+ * @param  int|WP_User $user The user ID or object. Default is the current user.
+ *
+ * @return array             The user's capabilities or empty array if none or user doesn't exist.
+ */
+function km_get_user_capabilities( $user = null ) {
+	$user = $user ? new WP_User( $user ) : wp_get_current_user();
+
+	return array_keys( $user->allcaps );
+}
+```
+
+If you pass a user ID to it, you will get that user’s capabilities. If you don’t pass anything to it, you’ll get the current user’s capabilities instead.
+
+It will return an array of capabilities like the one pictured below, or an empty array if the user has no capabilities or doesn’t exist.
+
+<img src={capabilities} alt="capabilities" />

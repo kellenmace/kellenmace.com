@@ -1,0 +1,26 @@
+---
+title: Get Uploads Directory Path in WordPress
+date: "2017-04-21T19:49:22.121Z"
+---
+
+The following function can be used to get the absolute path to the WordPress uploads directory:
+
+```php
+/**
+ * Get the absolute path to the WordPress uploads directory,
+ * with a trailing slash.
+ *
+ * @return string The uploads directory path.
+ */
+function km_get_wordpress_uploads_directory_path() {
+	$upload_dir = wp_upload_dir();
+
+	return trailingslashit( $upload_dir['basedir'] );
+}
+```
+
+It will return a path to where the WordPress `/uploads/` directory is, whether it’s in the default location or whether an `UPLOADS` constant has been defined to specify an alternate location. The path it returns will look something like:
+
+```sh
+/path/to/wordpress/wp-content/uploads/
+```

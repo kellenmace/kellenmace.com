@@ -1,0 +1,19 @@
+---
+title: Load Template From WordPress Plugin
+date: "2015-12-11T17:07:48.121Z"
+---
+
+You can load a template file from your plugin using the `template_include` filter, with code similar to this:
+
+```php
+function km_include_gym_dashboard_page_template( $template ) {
+	if ( is_page( 'gym-dashboard' )  ) {
+		return plugin_dir_path( __FILE__ ) . 'templates/content-gym-dashboard.php';
+	}
+
+	return $template;
+}
+add_filter( 'template_include', 'km_include_gym_dashboard_page_template', 99 );
+```
+
+If you’re looking for something more robust that checks the child and parent themes before falling back to the plugin template, check out [Gamajo Template Loader](https://github.com/GaryJones/Gamajo-Template-Loader).

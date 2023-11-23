@@ -1,0 +1,28 @@
+---
+title: Get Current User’s Role in WordPress
+date: "2016-01-02T18:13:20.121Z"
+---
+
+There’s no WordPress function to directly get the current user’s role, so I typically include my own function to serve that purpose, similar to the one below
+
+This function is pretty versatile since if you pass a specific user’s ID or a WP_User object to it, it will return that user’s role. If you pass nothing to it, you’ll get the role of the current user instead.
+
+```php
+/*
+ * Get user's role.
+ *
+ * If $user parameter is not provided, returns the current user's role.
+ * Only returns the user's first role, even if they have more than one.
+ *
+ * @param mixed $user User ID or object. Pass nothing for current user.
+ *
+ * @return string The User's role, or an empty string if none.
+ */
+function km_get_user_role( $user = null ) {
+	$user = $user ? new WP_User( $user ) : wp_get_current_user();
+
+	return $user->roles ? $user->roles[0] : '';
+}
+```
+
+Note that if a user has multiple roles assigned to them, this function will only return the first role.

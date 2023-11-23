@@ -1,0 +1,29 @@
+---
+title: Download a Plugin or Theme from the WordPress Admin Dashboard
+date: "2015-12-02T14:24:55.121Z"
+---
+
+<script>
+  import advancedCodeEditor from './advanced-code-editor.png';
+  import comments from './comments.jpg';
+</script>
+
+Typically, if I need to download a plugin or theme that’s running on a remote server, I connect to that server via FTP or SSH and transfer the files to my local machine. However, sometimes I don’t have access to the server for one reason or another, but I DO have the username and password to the WordPress admin dashboard. Below, I’ll outline how I download a plugin or theme from the WordPress admin dashboard using the help of a free plugin.
+
+## Update 4/26/19
+
+As Linkpak Digital pointed out in the comments, the Advanced Code Editor plugin mentioned in the section below is no longer available on the wordpress.org Plugin Directory. I now recommend using this one instead:
+[https://wordpress.org/plugins/download-plugins-dashboard/](https://wordpress.org/plugins/download-plugins-dashboard/)
+
+## Old Steps
+
+1. Log in to the WordPress admin for the site where the plugin/theme you want is installed.
+1. Go to `Plugins` > `Add New`. Search for and install the [Advanced Code Editor]https://wordpress.org/plugins/advanced-code-editor/) plugin.
+1. Go to `Plugins` > `Installed Plugins` and activate it.
+1. Go to `Plugins` > `Editor` if you want to download a plugin, or `Appearance` > `Editor` if you want to download a theme.
+1. Select the plugin/theme from the dropdown menu and click `select`
+1. Click the far-right button to download it
+
+<img src={advancedCodeEditor} alt="Advanced Code Editor screenshot" />
+
+<img src={comments} alt="comments" />

@@ -1,0 +1,28 @@
+---
+title: Get Post Types by Taxonomy in WordPress
+date: "2016-06-16T23:13:46.121Z"
+---
+
+The code below can be used to get the post types for a taxonomy in WordPress. This is useful if you know the taxonomy and want to get the post types associated with it.
+
+```php
+/**
+ * Get all post types for a taxonomy.
+ *
+ * @author Kellen Mace
+ * @param  string $taxonomy The taxonomy slug to get post types for.
+ * @return array            The post types associated with $taxonomy.
+ */
+function wds_campbell_get_post_types_by_taxonomy( $taxonomy = '' ) {
+
+	global $wp_taxonomies;
+
+	if ( isset( $wp_taxonomies[ $taxonomy ] ) ) {
+		return $wp_taxonomies[ $taxonomy ]->object_type;
+	}
+
+	return array();
+}
+```
+
+To do the opposite of this (get the taxonomies for a post type), see [`get_object_taxonomies()`](https://developer.wordpress.org/reference/functions/get_object_taxonomies/).

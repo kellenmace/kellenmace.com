@@ -1,0 +1,93 @@
+---
+title: Delete Transients with prefix in WordPress
+date: "2020-02-27T06:31:00.121Z"
+---
+
+Often in WordPress development, you need to save transients to the database that have dynamic names, like this:
+
+```php
+function set_post_count_transient( $count, $post_type, $year, $month ) {
+	$transient_key = "km_post_count_{$post_type}_{$year}_{$month}";
+
+	set_transient( $transient_key, $count, WEEK_IN_SECONDS );
+}
+```
+
+This results in dynamically created transient keys such as `km_post_count_project_2020_03`.
+
+That makes deleting them when you need to do cache invalidation difficult, though. You need to somehow call `delete_transient()` for all the transient keys that could _possibly_ exist.
+
+## The Looping Method
+
+One option is to use a series of loops to construct every possible transient key and call `delete_transient()` on each one, like this:
+
+```php
+function delete_all_post_count_transients() {
+	$post_types = get_post_types();
+	$years      = get_all_possible_years();
+	$months     = get_all_possible_months();
+
+	foreach ( $post_types as $post_type ) {
+		foreach ( $years as $year ) {
+			foreach ( $months as $month ) {
+				$transient_key = "km_post_count_{$post_type}_{$year}_{$month}";
+
+				delete_transient( $transient_key );
+			}
+		}
+	}
+}
+```
+
+In some cases, that works well. In other cases, it's cumbersome and unwieldy. Wouldn't it be easier if we could just run a 1-liner function to delete all transients from the database that begin with the prefix `km_post_count_` and call it a day? That's what the functions in the next section do.
+
+## The Delete-Transients-By-Prefix Method
+
+```php
+/**
+ * Delete all transients from the database whose keys have a specific prefix.
+ *
+ * @param string $prefix The prefix. Example: 'my_cool_transient_'.
+ */
+function delete_transients_with_prefix( $prefix ) {
+	foreach ( get_transient_keys_with_prefix( $prefix ) as $key ) {
+		delete_transient( $key );
+	}
+}
+
+/**
+ * Gets all transient keys in the database with a specific prefix.
+ *
+ * Note that this doesn't work for sites that use a persistent object
+ * cache, since in that case, transients are stored in memory.
+ *
+ * @param  string $prefix Prefix to search for.
+ * @return array          Transient keys with prefix, or empty array on error.
+ */
+function get_transient_keys_with_prefix( $prefix ) {
+	global $wpdb;
+
+	$prefix = $wpdb->esc_like( '_transient_' . $prefix );
+	$sql    = "SELECT `option_name` FROM $wpdb->options WHERE `option_name` LIKE '%s'";
+	$keys   = $wpdb->get_results( $wpdb->prepare( $sql, $prefix . '%' ), ARRAY_A );
+
+	if ( is_wp_error( $keys ) ) {
+		return [];
+	}
+
+	return array_map( function( $key ) {
+		// Remove '_transient_' from the option name.
+		return substr( $key['option_name'], strlen( '_transient_' ) );
+	}, $keys );
+}
+```
+
+Related Gist with comments:
+[https://gist.github.com/kellenmace/7d8f3b4c48cef3fd68ebc8606415d7dd](https://gist.github.com/kellenmace/7d8f3b4c48cef3fd68ebc8606415d7dd)
+
+Once that code is in place, you can simply run `delete_transients_with_prefix( 'km_post_count_' )` to delete all transients with that prefix from the database.
+
+## Two Words of Caution
+
+1. Since these functions search for and delete all transients that begin with the prefix you provide, make sure that you don't have any other transient keys that begin with the same thing. For instance, if I were to save data with transient keys like `km_post_count_*` and `km_post_count_featured_*`, those would both be deleted if I were to call `delete_transients_with_prefix( 'km_post_count_' )`.
+1. Because the `get_transient_keys_with_prefix()` function searches the database for transients, it can't be used on sites that have a persistent object cache in place, such as Redis or Memcached. If a persistent object cache is being used, transients are stored in memory rather than in the database, so trying to find them in the database won't work. If you are using a persistent object cache, you should use the looping method described above, or something similar to construct all possible transient keys and call `delete_transient()` on each one.

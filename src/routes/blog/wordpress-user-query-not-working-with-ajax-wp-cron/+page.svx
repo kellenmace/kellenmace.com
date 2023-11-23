@@ -1,0 +1,34 @@
+---
+title: WordPress User Query Not Working with AJAX/WP-Cron
+date: "2019-03-05T19:40:24.121Z"
+---
+
+Recently, I was trying to do a user query on a WordPress site, but found that the query wasn’t able to fetch the users I wanted it to. This was because when an AJAX request or a WP-Cron job is being executed, there is no currently logged in user, so any parts of a user query that require elevated permissions/user capabilities can’t be run.
+
+As a workaround, I was able to temporarily switch the current user to one of the super admins on the site, run the user query, then switch the current user back immediately afterward. My code for doing so is below.
+
+```php
+private function get_foremen_in_division( $division ) {
+	$original_user_id = get_current_user_id();
+
+	// Set current user to be a Super Admin so the user query below works during the AJAX requests & WP-Cron jobs.
+	$super_admins = get_super_admins();
+	if ( $super_admins ) {
+		$super_admins = array_values( $super_admins );
+		wp_set_current_user( null, $super_admins[0] );
+	}
+
+	$foremen = get_users( [
+		'role'        => 'foreman',
+		'fields'      => [ 'ID', 'display_name' ],
+		'meta_key'    => '_division',
+		'meta_value'  => $division,
+		'count_total' => false,
+	] );
+
+	// Restore original user.
+	wp_set_current_user( $original_user_id );
+
+	return $foremen;
+}
+```

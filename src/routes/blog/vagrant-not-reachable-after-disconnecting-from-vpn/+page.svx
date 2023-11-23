@@ -1,0 +1,40 @@
+---
+title: Vagrant Not Reachable After Disconnecting from VPN
+date: "2015-07-22T08:52:37.121Z"
+---
+
+If Vagrant is not reachable after disconnecting from a VPN, first run these commands to bring the interface down, then back up:
+
+```sh
+sudo ifconfig vboxnet0 down
+sudo ifconfig vboxnet0 up
+```
+
+For a long term solution, consider adding the code below to the Vagrantfile, which will use the host as DNS:
+
+```sh
+config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+end
+```
+
+Flush all local DNS caches for OS X 10.10.4+ by running:
+`sudo dscacheutil -flushcache;sudo killall -HUP mDNSResponder;say cache flushed`
+
+## Further troubleshooting steps
+
+1. Make sure you’re disconnected from the VPN.
+1. Making sure no VMs are running.
+1. Reboot your computer.
+1. Start the virtual machine form the VirtualBox GUI, and enter `vagrant` / `vagrant` for the username and password.
+1. Power off the machine from the VirtualBox GUI (if it’s in a corrupted state, starting from VB and powering it down from VirtualBox will help resolve a lot of potential issues).
+1. Attempt to `vagrant up`.
+1. If it still doesn’t work after these steps, you might need to destroy and re-provision your vagrant box. If you use Varying Vagrant Vagrants (VVV), you can run vagrant destroy, then follow these steps.
+
+## To prevent recurrence
+
+* Use OpenConnect instead of Cisco’s AnyConnect for your VPN client. Folks in my circles say it’s better in general and less prone to cause issues like this.
+* Shut down vagrant VMs before you connect to a VPN, and before you disconnect.
+
+Source for the first few commands listed above:
+[http://stackoverflow.com/questions/20339191/vagrant-with-vpn-connection-over-host-computer](http://stackoverflow.com/questions/20339191/vagrant-with-vpn-connection-over-host-computer)

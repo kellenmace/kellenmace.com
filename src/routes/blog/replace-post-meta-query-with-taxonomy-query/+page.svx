@@ -1,0 +1,114 @@
+---
+title: Replace Post Meta Query with Taxonomy Query
+date: "2015-09-06T17:52:27.121Z"
+---
+
+In this post, I’ll cover how to replace a post meta query with a taxonomy query. Why, you ask? WordPress’ postmeta database table is not optimized for queries, so querying for posts based on their post meta like the below is inefficient.
+
+```php
+// get all 'staff' post types with a '_hmc_staff_include_on' custom field value of 'executive_committee'
+$staff = new WP_Query( array (
+    'post_type' => 'staff',
+    'posts_per_page' => 500,
+    'meta_query' => array(
+        array(
+            'key'     => '_hmc_staff_include_on',
+            'value'   => 'executive_committee',
+        ),
+    ),
+) );
+
+if ( $staff->have_posts() ) : while ( $staff->have_posts() ) : $staff->the_post();
+
+        get_template_part( 'partials/content', 'staff-listing' );
+
+endwhile; endif;
+
+wp_reset_postdata();
+```
+
+A much more efficient way to do this is to query by taxonomy terms instead, since the database tables related to taxonomies ARE optimized for queries. To make that switch, we first need to remove the `staff_include_on` metabox and fields from elsewhere in our code, and instead provide those options as taxonomy terms.
+
+```php
+function km_register_taxonomy_include_staff_on_page() {
+    $labels = array(
+        'name' => __( 'Include on Page', 'hmc' ),
+        'singular_name' => __( 'Include on Page', 'hmc' ),
+        'search_items' => __( 'Search Include on Page', 'hmc' ),
+        'popular_items' => __( 'Popular Include on Page', 'hmc' ),
+        'all_items' => __( 'All Include on Page', 'hmc' ),
+        'parent_item' => __( 'Parent Include on Page', 'hmc' ),
+        'parent_item_colon' => __( 'Parent Include on Page:', 'hmc' ),
+        'edit_item' => __( 'Edit Include on Page', 'hmc' ),
+        'update_item' => __( 'Update Include on Page', 'hmc' ),
+        'add_new_item' => __( 'Add New Include on Page', 'hmc' ),
+        'new_item_name' => __( 'New Include on Page', 'hmc' ),
+        'separate_items_with_commas' => __( 'Separate Include on Page with commas', 'hmc' ),
+        'add_or_remove_items' => __( 'Add or remove Include on Page', 'hmc' ),
+        'choose_from_most_used' => __( 'Choose from the most used Include on Page', 'hmc' ),
+        'menu_name' => __( 'Include on Page', 'hmc' ),
+    );
+
+    $args = array(
+        'labels' => $labels,
+        'public' => false, // set to false so your tax terms aren't shown on the front end of your site
+        'show_in_nav_menus' => false,
+        'show_ui' => true, // set to true so these taxonomy terms appear on post edit screen
+        'show_tagcloud' => false,
+        'show_admin_column' => false,
+        'hierarchical' => false,
+        'rewrite' => false,
+        'query_var' => true
+    );
+    register_taxonomy( 'include_staff_on_page', array( 'staff' ), $args );
+}
+add_action( 'init', 'km_register_taxonomy_include_staff_on_page' ) );
+```
+
+We’ll also add this bit of code to add our three desired taxonomy terms to the database, just in case they’re not there already:
+
+```php
+function km_insert_taxonomy_terms_include_staff_on_page() {
+    if ( ! term_exists( 'executive_committee', 'include_staff_on_page' ) ) {
+        wp_insert_term( 'executive_committee', 'include_staff_on_page' );
+    }
+    if ( ! term_exists( 'our_people', 'include_staff_on_page' ) ) {
+        wp_insert_term( 'our_people', 'include_staff_on_page' );
+    }
+    if ( ! term_exists( 'our_stories', 'include_staff_on_page' ) ) {
+        wp_insert_term( 'our_stories', 'include_staff_on_page' );
+    }
+}
+add_action( 'init', 'km_insert_taxonomy_terms_include_staff_on_page' ) );
+```
+
+In this example, when the site admin is creating/editing a `Staff` post, they’ll be able to select from the three `include_staff_on_page` taxonomy terms:
+
+1. `executive_committee`
+1. `our_people`
+1. `our_stories`
+
+Now when we want to get the posts that have the `executive_committee` taxonomy term for example, we can use this much more efficient query:
+
+```php
+// get all 'staff' post types with a taxonomy term of 'executive_committee'
+$staff = new WP_Query( array (
+    'post_type' => 'staff',
+    'posts_per_page' => 500,
+    'tax_query' => array(
+        array(
+            'taxonomy' => 'include_staff_on_page',
+            'field'    => 'slug',
+            'terms'    => 'executive_committee',
+        ),
+    ),
+) );
+
+if ( $staff->have_posts() ) : while ( $staff->have_posts() ) : $staff->the_post();
+
+    get_template_part( 'partials/content', 'staff-listing' );
+
+endwhile; endif;
+
+wp_reset_postdata();
+```

@@ -1,0 +1,72 @@
+---
+title: Remove Custom Post Type Slug from Permalinks
+date: "2014-05-28T12:40:32.169Z"
+---
+
+<script>
+  import comments from './comments.png';
+</script>
+
+If you create a custom post type in WordPress, its slug will be added to the permalink (URL) structure by default. This can be desirable for grouping types of posts together, but it can also result in longer, harder-to-remember URLs, not to mention articles that don't rank as highly on Google [according to Yoast](https://yoast.com/articles/wordpress-seo/), who is an authority on WordPress search engine optimization (SEO). In this post, I'll cover how to safety and properly remove the custom post type slug from your permalinks.
+
+Recently, I began creating a number of sites for a racing company that puts on 5K, 10K, marathon, and other distance races and fun runs. For these sites, I created a custom post type called `race`. This resulted in permalinks such as `example.com/race/race-title`. As you can see, this is not nearly as clean, easy to remember, or search engine optimized as having permalinks like `example.com/race-title` would be. I found a great post on the [WordPress.com VIP](http://vip.wordpress.com/) site on how to remove custom post types from permalinks that I followed. It appears that that post has been deleted though, so I'll outline the process below.
+
+1. Create your custom post type (unless already created). This can be done very easily by using the great, free [Custom Post Type UI](https://wordpress.org/plugins/custom-post-type-ui/) plugin.
+
+1. [Create a plugin](https://codex.wordpress.org/Writing_a_Plugin) for our new code to live in (yes, it could go in your theme's functions.php file, but then it'd be lost if the theme were changed!).
+
+1. Filter the permalink for our custom post type so that all published posts don’t have the slug in their URLs:
+
+```php
+/**
+ * Remove the slug from published post permalinks. Only affect our custom post type, though.
+ */
+function gp_remove_cpt_slug( $post_link, $post ) {
+
+    if ( 'race' === $post->post_type && 'publish' === $post->post_status ) {
+        $post_link = str_replace( '/' . $post->post_type . '/', '/', $post_link );
+    }
+
+    return $post_link;
+}
+add_filter( 'post_type_link', 'gp_remove_cpt_slug', 10, 2 );
+```
+
+1. At this point, trying to view the link would result in a 404 (Page Not Found) error. That’s because WordPress only knows that Posts and Pages can have URLs like `domain.com/post-name/` or `domain.com/page-name/`. We need to teach it that our custom post type's posts can also have URLs like `domain.com/cpt-post-name/`.
+
+```php
+/**
+ * Have WordPress match postname to any of our public post types (post, page, race).
+ * All of our public post types can have /post-name/ as the slug, so they need to be unique across all posts.
+ * By default, WordPress only accounts for posts and pages where the slug is /post-name/.
+ *
+ * @param $query The current query.
+ */
+function gp_add_cpt_post_names_to_main_query( $query ) {
+
+	// Bail if this is not the main query.
+	if ( ! $query->is_main_query() ) {
+		return;
+	}
+
+	// Bail if this query doesn't match our very specific rewrite rule.
+	if ( ! isset( $query->query['page'] ) || 2 !== count( $query->query ) ) {
+		return;
+	}
+
+	// Bail if we're not querying based on the post name.
+	if ( empty( $query->query['name'] ) ) {
+		return;
+	}
+
+	// Add CPT to the list of post types WP will include when it queries based on the post name.
+	$query->set( 'post_type', array( 'post', 'page', 'race' ) );
+}
+add_action( 'pre_get_posts', 'gp_add_cpt_post_names_to_main_query' );
+```
+
+That's it! Just change both instances of `race` in these code samples to the slug of your custom post type, and replace `gp_` with whatever function prefix you'd like (your initials would be fine), and you should be all set. Going to `Settings` > `Permalinks` and saving the permalink structure to end in `/%postname%/` may also be necessary.
+
+## Comments
+
+<img src={comments} alt="comments" />

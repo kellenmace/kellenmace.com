@@ -1,0 +1,19 @@
+---
+title: get_post_author() by Post ID in WordPress
+date: "2019-06-23T11:17:57.121Z"
+---
+
+WordPress doesn't have a native `get_post_author()` function you can call to get the user ID for the author of a post. This function can be used for that purpose:
+
+```php
+/**
+ * @param int $post_id Post ID.
+ *
+ * @return int Post author ID.
+ */
+function get_post_author( $post_id ) {
+  return get_post_field( 'post_author', $post_id );
+}
+```
+
+You could of course just call `get_post_field( 'post_author', $post_id )` directly, but wrapping it in the `get_post_author()` function results in slightly better semantics and more readable code, since the function name communicates its purpose.

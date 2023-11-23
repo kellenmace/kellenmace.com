@@ -1,0 +1,29 @@
+---
+title: Set Image Caption via PHP in WordPress
+date: "2016-03-22T14:46:37.121Z"
+---
+
+In order to change an image’s caption, you can of course find that image in the WordPress Media Gallery and enter a new value in the `Caption` field, but what if you want to update the captions of 100 images? It’d be much more efficient to write some code to handle that for you.
+
+As an example, here’s how you would set the captions of a few images to be the same as the image title:
+
+```php
+// The IDs of the posts for which you want to update the featured image caption
+$post_ids_to_update = array( 21, 57, 95 );
+
+// Loop through each of the post IDs
+foreach ( $post_ids_to_update as $post_id ) {
+
+	// Get the ID of this post's featured image
+	$featured_image_id = get_post_thumbnail_id( $post_id );
+
+	// Get the title of this post's featured image
+	$featured_image_title = get_the_title( $featured_image_id );
+
+	// Sanitize the text so we're ready to insert it into the database
+	$new_caption_text = sanitize_text_field( $featured_image_title );
+
+	// Set the new caption (a.k.a. the post excerpt) of the featured image
+	wp_update_post( 'post_excerpt', $featured_image_title )
+}
+```

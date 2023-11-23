@@ -1,0 +1,34 @@
+---
+title: Advanced Custom Fields wysiwyg Toolbar Buttons Missing
+date: "2017-06-29T16:16:50.121Z"
+---
+
+<script>
+	import acfWysiwygToolbar from './acf-wysiwyg-toolbar.png'
+</script>
+
+If you notice that a site has Advanced Custom Fields wysiwyg toolbar buttons missing, it is likely because the `Basic` toolbar is being displayed rather than the `Full` toolbar. I was able to fix that issue and get them to show the Full toolbar by implementing the filter below.
+
+```php
+/**
+ * Remove the Basic toolbar so that the Full toolbar appears in ACF wysiwyg fields.
+ *
+ * @since  0.1.0
+ * @author Kellen Mace
+ * @param  array $toolbars The toolbars.
+ * @return array $toolbars The toolbars, with the Basic toolbar removed.
+ */
+public function remove_acf_wysiwyg_basic_toolbar( $toolbars ) {
+
+	if ( isset( $toolbars['Basic'] ) && isset( $toolbars['Full'] ) ) {
+		unset( $toolbars['Basic'] );
+	}
+
+	return $toolbars;
+}
+add_filter( 'acf/fields/wysiwyg/toolbars', 'km_remove_acf_wysiwyg_basic_toolbar' );
+```
+
+This function removes the Basic toolbar from the array of available toolbars available to ACF wysiwyg fields, so the remaining Full toolbar is used instead. Here’s a before and after screenshot illustrating what it does:
+
+<img src={acfWysiwygToolbar} alt="ACF WYSIWYG toolbar" />

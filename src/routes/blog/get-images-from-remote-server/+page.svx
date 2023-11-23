@@ -1,0 +1,33 @@
+---
+title: Get Images from Remote Server by Proxy
+date: "2015-07-17T17:46:37.121Z"
+---
+
+If you have the files and database you need to work on a WordPress site locally but not the images and other media, how can you get them from the remote server?
+
+For small sites, simply downloading the entire wp-content/uploads/ directory may be the easiest and quickest solution. For large sites, however, it’s a much better idea to get the images on an as-needed basis. One way is to [set up apache/nginx to load the media from the remote site](http://rzen.net/serve-missing-media-production-apache-nginx/) for files that aren’t available locally. That method requires a little more knowledge and involves configuring files in your local web server though, so for this example we’re going to let a WordPress plugin do the hard work for us. Here are the steps:
+
+## Steps
+
+1. Download and activate the [Uploads by Proxy](https://wordpress.org/plugins/uploads-by-proxy/) plugin
+
+2. Open the site’s wp-config.php file in an editor and add these lines of code, replacing “example.com” with whatever remote site you want to pull the images/media from:
+
+```php
+define( 'UBP_IS_LOCAL', 'true' );
+define( 'UBP_SITEURL', 'http://example.com' );
+```
+
+Tip: the main plugin page says that the `define(‘UBP_IS_LOCAL’, ‘true’);` is only needed on staging servers for some reason, but I always have to enter that line to get it to work on local development sites, too.
+
+## Advantages
+
+This method has two advantages over setting up an nginx proxy manually:
+
+1. It’s quicker, since you’re simply activating a plugin and pasting in two lines of code; there’s no time spent SSH-ing into your local nginx server and configuring files.
+
+2. It results in faster page loads, since this plugin actually downloads the images the first time they are accessed remotely via proxy, then for every subsequent request, they load much more quickly since you have them saved locally. By contrast, manually setting up apache/nginx to reference the remote images/media EVERY time rather than saving them locally.
+
+## Troubleshooting
+
+Occasionally, I find that the plugin doesn’t work because it’s unable to get the IP address of the site you want to pull the images from. If that happens and you’re comfortable with the command line and editing PHP, you can run `ping http://example.com`, which will reveal the site’s IP address, then paste it into the first line of the Uploads by Proxy `get_ip()` method, like this: `return '12.34.567.890'`. That will prevent the plugin from attempting to use third party services to look up the IP address of the remote site, and immediately return the correct IP address instead. Note that this change could get erased when Uploads by Proxy is updated, but you could always just paste it in again later to get it working again if that happens.

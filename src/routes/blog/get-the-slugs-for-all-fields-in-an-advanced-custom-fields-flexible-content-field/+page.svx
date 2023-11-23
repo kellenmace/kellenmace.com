@@ -1,0 +1,26 @@
+---
+title: Get the Slugs for All Fields in an Advanced Custom Fields Flexible Content Field
+date: "2017-04-19T19:54:50.121Z"
+---
+
+The following function can be used to get the slugs of all fields in an Advanced Custom Fields flexible content field. By default, it returns the field slugs for the Flexible Content fields on the current page, but you can provide the optional `$post_id` argument to get the field slugs for any other post/page instead.
+
+```php
+/**
+ * Get the slugs for all fields in an ACF Flexible Content field.
+ *
+ * @param  string $flexible_content_slug The slug of the Flexible Content field.
+ * @param  int    $post_id               (optional) The ID of the post. Default is current post ID.
+ * @return array                         The field slugs. Emtpy array on error or if there are no fields.
+ */
+function km_get_all_field_slugs_in_acf_flexible_content_field( $flexible_content_slug, $post_id = null ) {
+	$post_id                = $post_id ?: get_the_ID();
+	$flexible_content_field = get_field( $flexible_content_slug, $post_id );
+
+	if ( ! is_array( $flexible_content_field ) ) {
+		return array();
+	}
+
+	return wp_list_pluck( $flexible_content_field, 'acf_fc_layout' );
+}
+```

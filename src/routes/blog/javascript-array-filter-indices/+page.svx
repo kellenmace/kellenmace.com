@@ -1,0 +1,27 @@
+---
+title: JavaScript Array Filter to get Indices
+date: "2019-09-16T17:16:48.121Z"
+---
+
+JavaScript's `filter()` array method is awesome for pulling out just the values that you want. What if instead of getting those values though, you need to get the array indices for those values instead? `reduce()` can be used for that purpose, as illustrated by the example below:
+
+```js
+const cars = [
+  {make: "ford", model: "mustang"},
+  {make: "toyota", model: "camry"},
+  {make: "ford", model: "fiesta"},
+  {make: "chevrolet", model: "volt"},
+  {make: "ford", model: "escape"},
+  {make: "chrysler", model: "pacifica"},
+]
+
+const fordCarIndices = cars.reduce((fordCarIndices, field, index) => {
+  if (field.make === "ford") {
+    fordCarIndices.push(index)
+  }
+  return fordCarIndices
+}, [])
+
+console.log(fordCarIndices)
+// Output: [0, 2, 4]
+```

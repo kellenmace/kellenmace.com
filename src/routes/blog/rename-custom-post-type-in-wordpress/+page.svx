@@ -1,0 +1,36 @@
+---
+title: Rename Custom Post Type in WordPress
+date: "2015-08-28T15:00:17.121Z"
+---
+
+If you simply want to change how a post type is displayed in the WordPress admin, you can simply change its labels, or use a plugin like [this one](https://wordpress.org/plugins/cpt-editor/) to do it for you. If on the other hand you need to rename the post type’s slug for some technical reason, then you can follow the steps below. They assume you’re comfortable editing code and using [WP-CLI](http://wp-cli.org/). Before proceeding, make sure you have a complete backup of your site, including the database, that you can revert back to if you have to.
+
+## 1. Search & Replace Within Files
+
+Search for all instances of the post type slug and replace them with the new one. Be careful to capture any CSS selectors written to use the classes that WordPress automatically creates
+
+For example, if the old post type name is ‘property’ and the them uses WP's [body_class()](https://developer.wordpress.org/reference/functions/body_class/) function to output the body element classes, then WP will automatically add a class of `single-property` to the body element on single Property pages. Knowing that, you’d have to change a CSS selector like the one below to reflect your new post type name.
+
+```css
+.single-property {
+	// CSS rules go here
+}
+```
+
+## 2. Rename Files
+
+Rename files whose names contain the old slug. For instance, you would need to change `single-old_name.php` to `single-new_name.php`, and `page-old_name.php` to `page-new_name.php`. in the theme.
+
+## 3. Search & Replace in Database
+
+Run a search and replace command to replace the custom post type name in the database. If the old CPT is something unique like `km_articles` the method below for doing a search & replace may work. If it’s a common dictionary word like `articles` I would not recommend doing this, however – you’ll likely need a more complex SQL command that only modifies the database columns and rows where CPT slugs exist.
+
+Running this WP-CLI command works for a single WP install:
+
+`wp search-replace property new-name`
+
+…or this works for all the sites in a multisite network:
+
+`wp search-replace property new-name --network`
+
+Just read the [WP-CLI search & replace documentation](https://developer.wordpress.org/cli/commands/search-replace/) and make sure you’re only affecting the database tables you need to. Check out the `--dry-run` flag you can include to have WP-CLI show you how many changes it would make first, without actually doing the search & replace until you’re ready.

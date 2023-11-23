@@ -1,0 +1,25 @@
+---
+title: Get Main Site URL in WordPress Multisite Network
+date: "2016-08-19T19:49:38.121Z"
+---
+
+The code below can be used to get the URL of the main site in the WordPress Multisite Network:
+
+```php
+/*
+ * Get the home URL of the main site in a multisite network.
+ *
+ * @return string The home URL of the main site.
+ */
+function km_get_main_site_url() {
+	// This is the current network's information; 'site' is old terminology.
+	global $current_site;
+
+	if ( is_multisite() && $current_site ) {
+		$main_site_blog_id = $current_site->blog_id;
+		return get_home_url( $main_site_blog_id );
+	}
+
+	return home_url();
+}
+```

@@ -1,0 +1,30 @@
+---
+title: Get User’s First and Last Name in WordPress
+date: "2016-08-31T21:09:10.121Z"
+---
+
+The function below can be used to get a user’s first and last name with a space between them, like “Kellen Mace”. If they only have a first name saved, it will return that, and it will return their WP login as a last resort. This is useful if you want to display the users’ names in a list, for example.
+
+```php
+/**
+ * Get user's first and last name, else just their first name, else their
+ * display name. Defalts to the current user if $user_id is not provided.
+ *
+ * @param  mixed  $user_id The user ID or object. Default is current user.
+ * @return string          The user's name.
+ */
+function km_get_users_name( $user_id = null ) {
+	$user_info = $user_id ? new WP_User( $user_id ) : wp_get_current_user();
+
+	if ( $user_info->first_name ) {
+
+		if ( $user_info->last_name ) {
+			return $user_info->first_name . ' ' . $user_info->last_name;
+		}
+
+		return $user_info->first_name;
+	}
+
+	return $user_info->display_name;
+}
+```

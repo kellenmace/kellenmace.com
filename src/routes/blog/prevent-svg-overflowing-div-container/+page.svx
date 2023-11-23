@@ -1,0 +1,15 @@
+---
+title: Prevent SVG from Overflowing Div Container
+date: "2020-04-13T13:06:18.121Z"
+---
+
+Steps to prevent an SVG from overflowing its div container:
+
+1. On the `<svg>` element, remove the inline `height` and `width` attributes, if present.
+1. On the `<svg>` element, make sure a `viewBox` is specified. Example: `viewBox="0 0 72 72"`.
+1. On the container div, specify a `width`.
+
+Here's a CodePen showing the end result:
+https://codepen.io/kellenmace/pen/vYNOMKW
+
+If you're using an SVG as an `img` element's `src`, or have something more complex going on, check out [this Stack Overflow thread](https://stackoverflow.com/questions/19484707/how-can-i-make-an-svg-scale-with-its-parent-container).

@@ -1,0 +1,131 @@
+---
+title: Create a Taxonomy Dropdown in WordPress
+date: "2015-06-25T16:26:00.121Z"
+---
+
+<script>
+  import taxonomyDropdownImage from './taxonomy-dropdown.jpg';
+</script>
+
+In this post, I’ll outline how to create a taxonomy dropdown in WordPress that lets the user choose an option, then reloads the page to only show entries that match the taxonomy term they chose. This is extremely useful for filtering a list of results to show only what your visitor is interesting in seeing.
+
+Let’s say we have a custom post type called `tool`, and we’ve created a custom taxonomy to organize our tools called `tools`. Our `tools` taxonomy has terms such as `hammer`, `nails`, `saw`, etc.
+
+To customize the code below to work for your purposes:
+
+1. Change `tool` to whatever post type you’re using -- this could be `post` or `page` (which are both built in to WordPress) or any custom post type.
+1. Change `tools` to whatever taxonomy you’re using -- this could be `category` or `tag` (which are both built in to WordPress) or any custom taxonomy.
+1. Change the `km_` function prefix to something unique.
+
+## functions.php Code
+
+Put this code in functions.php:
+
+```php
+/**
+ * Get tools, filtered by the taxonomy term, if one was selected.
+ *
+ * @return WP_Query Tools in the taxonomy term if one was selected, else all.
+ */
+function km_get_tools_in_taxonomy_term() {
+
+	return new WP_Query( array(
+			'post_type'      => 'tool', // Change this to the slug of your post type.
+			'posts_per_page' => 500, // Display a maximum of 500 options in the dropdown.
+			'tax_query'      => km_get_tools_in_taxonomy_term_tax_query(),
+	) );
+
+}
+
+
+/**
+ * Get the taxonomy query to be used by km_get_tools_in_taxonomy_term().
+ *
+ * @return array The taxonomy query if a term was selected, else an empty array.
+ */
+function km_get_tools_in_taxonomy_term_tax_query() {
+
+	$selected_term = km_get_selected_taxonomy_dropdown_term();
+
+	// If a term has been selected, use that in the taxonomy query.
+	if ( $selected_term ) {
+		return array(
+			array(
+				'taxonomy' => 'tools', // Change this to the slug of your taxonomy.
+				'field'    => 'term_id',
+				'terms'    => $selected_term,
+			),
+		);
+	}
+
+	// Otherwise, don't filter based on a taxonomy term and just get all the results.
+	return array();
+}
+
+
+/**
+ * Get the selected taxonomy dropdown term slug.
+ *
+ * @return string The selected taxonomy dropdown term ID, else empty string.
+ */
+function km_get_selected_taxonomy_dropdown_term() {
+	return isset( $_GET[ 'tools' ] ) && $_GET[ 'tools' ] ? sanitize_text_field( $_GET[ 'tools' ] ) : '';
+}
+```
+
+## Page Template Code
+
+Then put this code in your page template:
+
+```php
+<div class="tools-dropdown">
+
+	<form id="tool-category-select" class="tool-category-select" method="get">
+
+		<?php
+		// Create and display the dropdown menu.
+		wp_dropdown_categories(
+			array(
+				'orderby'         => 'NAME', // Order the items in the dropdown menu by their name.
+				'taxonomy'        => 'tools', // Only include posts with the taxonomy of 'tools'.
+				'name'            => 'tools', // Change this to the
+				'show_option_all' => 'All Tools', // Text the dropdown will display when none of the options have been selected.
+				'selected'        => km_get_selected_taxonomy_dropdown_term(), // Set which option in the dropdown menu is the currently selected one.
+			) );
+		?>
+
+		<input type="submit" value="View" />
+	</form>
+
+</div>
+
+<section id="tools-listing">
+
+	<?php $tools_in_taxonomy_term = km_get_tools_in_taxonomy_term(); ?>
+
+	<!-- If posts were found, -->
+	<?php if ( $tools_in_taxonomy_term->have_posts() ) : ?>
+
+		<!-- Loop through every post. -->
+		<?php while ( $tools_in_taxonomy_term->have_posts() ) : $tools_in_taxonomy_term->the_post(); ?>
+
+      <?php // Display each post's title and content - you can change this section to display whatever post content you want. ?>
+			<article class="tool-entry">
+				<h1><?php the_title(); ?></h1>
+				<p><?php the_content(); ?></p>
+			</article>
+
+		<?php endwhile; ?>
+
+		<?php wp_reset_postdata(); ?>
+
+	<?php endif; ?>
+
+</section>
+```
+
+## Example
+
+<img src={taxonomyDropdownImage} alt="taxonomy dropdown" />
+
+Happy filtering! :)

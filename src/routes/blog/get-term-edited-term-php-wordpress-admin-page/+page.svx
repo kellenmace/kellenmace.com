@@ -1,0 +1,44 @@
+---
+title: Get Term Being Edited on term.php WordPress Admin Page
+date: "2018-04-03T16:25:49.121Z"
+---
+
+The function below can be used for getting the `WP_Term` object for the term that’s currently being edited on the `term.php` page in the WordPress admin. Just make sure that when you call this, the global `$taxnow` variable has been set. Using WP’s `admin_init` hook, or anything that fires after that point will work.
+
+```php
+/**
+ * Get the term currently being edited on the edit.php screen
+ * in the WordPress admin.
+ *
+ * @return WP_Term|null The term object or null on failure.
+ */
+function km_get_term_being_edited() {
+	global $taxnow;
+
+	if ( ! $taxnow || empty( $_GET['tag_ID'] ) ) {
+		return null;
+	}
+
+	$term_id = absint( $_GET['tag_ID'] );
+	$term    = get_term( $term_id, $taxnow );
+
+	return $term instanceof WP_Term ? $term : null;
+}
+```
+
+## Example Usage
+
+```php
+function km_do_something_when_term_12_is_being_edited() {
+
+	$term = km_get_term_being_edited();
+
+	if ( ! $term || 12 !== $term->term_id ) {
+		return;
+	}
+
+	// Put code here that should only run when the term with an
+	// ID of 12 is being edited.
+}
+add_action( 'admin_init', 'km_do_something_when_term_12_is_being_edited' );
+```

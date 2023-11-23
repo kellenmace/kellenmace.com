@@ -1,0 +1,41 @@
+---
+title: Disable CMB2 Styles on Front End Forms
+date: "2016-08-17T21:21:08.121Z"
+---
+
+[CMB2](https://github.com/WebDevStudios/CMB2) comes with default styles, but you may want to disable them if you’re outputting forms on the front end so they can be styled to match the rest of the site.
+
+Here’s how to disable CMB2 styles for all front end forms:
+
+```php
+/**
+ * Disable CMB2 styles on front end forms.
+ *
+ * @return bool $enabled Whether to enable (enqueue) styles.
+ */
+function km_disable_cmb2_front_end_styles( $enabled ) {
+
+	if ( ! is_admin() ) {
+		$enabled = false;
+	}
+
+	return $enabled;
+}
+add_filter( 'cmb2_enqueue_css', 'km_disable_cmb2_front_end_styles' );
+```
+
+Or if you’d rather prevent the CMB2 styles from being enqueued on a per-form basis, you can set the `cmb_styles` argument to false when you call `cmb2_metabox_form()`, like this:
+
+```php
+/**
+ * Display Venture Capital CMB2 form.
+ */
+function km_display_venture_capital_form() {
+
+	$args = array(
+		'cmb_styles' => false,
+	);
+
+	cmb2_metabox_form( 'km_venture_capital_metabox', get_the_ID(), $args );
+}
+```

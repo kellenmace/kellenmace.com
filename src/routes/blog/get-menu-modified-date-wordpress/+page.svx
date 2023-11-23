@@ -1,0 +1,65 @@
+---
+title: Get Menu Modified Date in WordPress
+date: "2018-02-23T18:23:54.121Z"
+---
+
+WordPress doesn’t store a last modified date for navigation menus, so I created the set of functions below for keeping track of when menus were last updated.
+
+Whenever a menu is created or updated, a timestamp will be saved for it. You can then get the date modified timestamp for any menu using `wds_get_menu_modified_timestamp( $menu_id )`.
+
+Note that these functions keep track of last modified dates for WordPress menus themselves, not for the individual menu items inside. If you need the date modified for individual menu items, you can use [`get_the_modified_date()`](https://developer.wordpress.org/reference/functions/get_the_modified_date/).
+
+```php
+/**
+ * Save the date modified timestamp for a WordPress menu.
+ *
+ * @param int $menu_id Term ID of the menu being created/updated.
+ */
+function wds_save_menu_modified_timestamp( $menu_id ) {
+
+	$modified_timestamps             = get_option( '_wds_menu_modified', array() );
+	$modified_timestamps[ $menu_id ] = current_time( 'timestamp' );
+
+	update_option( '_wds_menu_modified', $modified_timestamps, false );
+}
+add_action( 'wp_create_nav_menu', 'wds_save_menu_modified_timestamp' );
+add_action( 'wp_update_nav_menu', 'wds_save_menu_modified_timestamp' );
+
+/**
+ * Delete the date modified timestamp for a WordPress menu.
+ *
+ * @param int $menu_id Term ID of the menu being deleted.
+ */
+function wds_delete_menu_modified_timestamp( $menu_id ) {
+
+	$modified_timestamps = get_option( '_wds_menu_modified', array() );
+
+	// Bail if this menu ID doesn't exist in the array of date modified timestamps.
+	if ( ! isset( $modified_timestamps[ $menu_id ] ) ) {
+		return;
+	}
+
+	unset( $modified_timestamps[ $menu_id ] );
+	update_option( '_wds_menu_modified', $modified_timestamps, false );
+}
+add_action( 'wp_delete_nav_menu', 'wds_delete_menu_modified_timestamp' );
+
+/**
+ * Get the date modified timestamp for a WordPress menu.
+ *
+ * @param  int        $menu_id Term ID of the menu.
+ *
+ * @return int|string          The date modified timestamp or empty string, if none.
+ */
+function wds_get_menu_modified_timestamp( $menu_id ) {
+
+	$modified_timestamps = get_option( '_wds_menu_modified', array() );
+
+	// Return an emtpy string if this menu ID doesn't exist in the array of date modified timestamps.
+	if ( ! isset( $modified_timestamps[ $menu_id ] ) ) {
+		return '';
+	}
+
+	return $modified_timestamps[ $menu_id ];
+}
+```

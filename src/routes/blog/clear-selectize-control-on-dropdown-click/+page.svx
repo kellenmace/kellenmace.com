@@ -1,0 +1,27 @@
+---
+title: Clear Selectize Control on Dropdown Click
+date: "2015-09-16T18:05:00.121Z"
+---
+
+If you’re using [Selectize](https://github.com/selectize/selectize.js/) to power your dropdown menus, you may find yourself wishing that when the user clicks the dropdown menu, the current value in the control would be cleared, leaving behind only a blinking cursor and the dropdown menu. This would make it very clear that the two options available to them are to start typing or click a dropdown item. However, the default Selectize behavior is to leave the previously selected value in the control with the cursor at the end of it so that the user has to know to hit backspace before they can begin typing, which is a bit counterintuitive.
+
+Here’s how to clear a selectize control on dropdown click:
+
+```js
+(function ($) {
+  $(document).ready(function () {
+    $body.find("select").each(function () {
+      var $select = $(this).selectize();
+
+      // Clear selected items from selectize control on dropdown click
+      $("#loadProject .selectize-control").on("click", function () {
+        var selectize = $select[0].selectize;
+        selectize.clear(true);
+      });
+    });
+  });
+})(jQuery);
+```
+
+Further documentation is available here:  
+[https://github.com/selectize/selectize.js/blob/master/docs/api.md](https://github.com/selectize/selectize.js/blob/master/docs/api.md)

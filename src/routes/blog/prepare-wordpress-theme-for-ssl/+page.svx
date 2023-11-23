@@ -1,0 +1,27 @@
+---
+title: Prepare WordPress Theme for SSL (https)
+date: "2015-04-20T11:30:00.121Z"
+---
+
+Moving your site to SSL is often a great idea for the obvious security purposes, but also for search engine optimization (SEO), since Google [now gives SSL sites a higher ranking than non-SSL sites](http://searchengineland.com/google-starts-giving-ranking-boost-secure-httpsssl-sites-199446). In this post, I’ll outline a few things to check for in your theme to make sure it’s ready for the move to SSL.
+
+## Prerequisites
+
+If your SSL certificate has already been purchased and applied, you can follow [this guide](http://www.wpbeginner.com/wp-tutorials/how-to-add-ssl-and-https-in-wordpress/) to set up your single WordPress installation for SSL, or the steps below to set up a multisite installation for it:
+
+1. Table `wp_options`: Change `siteurl` and `home` to include `https` in their URLs.
+1. Every site on the multisite network has its own `wp_{blog_id}_options` table. If it is a multisite install, update the `siteurl` and `home` fields for all of them, just as you did in step 1.
+1. Table `wp_sitemeta`: Similar to `wp_options`, there’s a `siteurl` field you’ll need to change here. Include `https://` and the trailing slash (`/`).
+
+Or, you can use one of the plugins available on [wordpress.org](http://wordpress.org/plugins/) to do this for you.
+
+## Prepare Your Theme by Covering Your Ass(ets)
+
+1. Open the files of your theme in a text editor. Search for `http://` and scan through the results. If possible, switch any hard-coded URLs to use WP functions like `get_the_permalink()`, `wp_get_attachment_url()`, etc. to generate the correct URLs. Alternatively, you can change any hard-coded urls to protocol-relative urls – for instance, you could change `http://example.com/my-image.jpg` to `//example.com/my-image.jpg`. This allows users’ browsers to download the needed asset by prepending https to the url on an SSL site (which yours will be), or prepending http to it on a non-SSL site. If you go the protocol-relative route, just make sure the asset being linked is available at both `https://example.com/my-image.jpg` AND `http://example.com/my-image.jpg`.
+1. Go through each file of your theme and make sure that wherever assets are being enqueued, they’re using the WordPress functions listed here to specify folders on your web server, and not using `WP_CONTENT_DIR`, `WP_CONTENT_URL`, `WP_PLUGIN_DIR` or `WP_PLUGIN_URL`. The functions included on that WordPress.org Codex page make use of a WordPress function named `is_ssl()` that checks whether or not it’s an SSL site, and returns a url with `https://` if it is, or `http://` if it isn’t. If your theme gets an image from `/images/logo.png` that’s inside of your theme’s main directory for example, the theme should include the path to that image like this: `get_template_directory_uri() . '/images/logo.png'`.
+
+## A Note about Quality Themes and Plugins
+
+Really, if you’re using a quality theme and quality plugins, they shouldn’t be loading any assets without using those WordPress functions that perform the `is_ssl()` check, so you shouldn’t need to change a single thing. Performing the steps above is only to make sure that when you make the move to SSL, you’re not surprised by an image, css or javascript file, or something else not loading when you expect it to.
+
+For a much more comprehensive guide to moving your site to SSL, including how to set up your web server to redirect http traffic to https, see [this guide](https://yoast.com/move-website-https-ssl/).

@@ -1,0 +1,47 @@
+---
+title: Get a list of all WordPress Pages that Contain a Shortcode
+date: "2019-03-04T19:12:01.121Z"
+---
+
+<script>
+  import pagesWithShortcode from './pages-with-shortcode.jpg';
+</script>
+
+The function below can be used to get a list of all WordPress pages that contain a shortcode.
+
+```php
+/**
+ * Get a list of all pages that contain a shortcode.
+ *
+ * @param string $shortcode The shortcode to look for without square brackets.
+ *
+ * @return array List of pages in the format $post_id => $post_title.
+ */
+function get_pages_with_shortcode( $shortcode ) {
+	$all_page_ids = ( new WP_Query( [
+		'post_type'              => 'page',
+		'posts_per_page'         => 1000,
+		'no_found_rows'          => true,
+		'fields'                 => 'ids',
+		'update_post_meta_cache' => false,
+		'update_post_term_cache' => false,
+    ] ) )->get_posts();    
+
+    $page_ids_with_shortcode = array_filter( $all_page_ids, function( $page_id ) use ( $shortcode ) {
+        $post_content = get_post_field( 'post_content', $page_id );
+        return false !== strpos( $post_content, '[' . $shortcode );
+    } );
+
+    $pages_with_shortcode = array_map( function( $page_id ) {
+        return get_the_title( $page_id );
+    }, array_combine( $page_ids_with_shortcode, $page_ids_with_shortcode ) );
+
+    asort( $pages_with_shortcode ); // Sort alphabetically by title.
+
+    return $pages_with_shortcode;
+}
+```
+
+You can use it like this: `get_pages_with_shortcode( 'gravityform' )`, replacing `gravityform` with the shortcode you’re interested in searching for. The array it returns look like this, with the post IDs as the keys and the page titles as the values:
+
+<img src={pagesWithShortcode} alt="pages with shortcode" />

@@ -1,0 +1,18 @@
+---
+title: Display WooThemes Testimonials Avatar before Quote
+date: "2015-11-03T16:13:37.121Z"
+---
+
+By default, the WooThemes Testimonials WordPress plugin displays the quote, then the avatar (author’s image), then the attribution (name, title and url). You can use the following filter to display the avatar before the quote:
+
+```php
+function qc_change_testimonial_element_order( $tpl ) {
+
+	$tpl = str_replace( '<blockquote class="testimonials-text" itemprop="reviewBody">%%TEXT%%</blockquote>%%AVATAR%% %%AUTHOR%%</div>', '%%AVATAR%%<blockquote class="testimonials-text" itemprop="reviewBody">%%TEXT%%</blockquote>%%AUTHOR%%</div>', $tpl );
+
+	return $tpl;
+}
+add_filter( 'woothemes_testimonials_item_template', 'qc_change_testimonial_element_order' );
+```
+
+You can also change the order of the attribution in relation to the avatar and quote using this same filter.

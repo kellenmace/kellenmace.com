@@ -1,0 +1,208 @@
+---
+title: Get a List of the Beaver Builder Modules on a Page
+date: "2018-09-26T17:26:13.121Z"
+---
+
+<script>
+  import beaverBuilderModuleList from './beaver-builder-module-list.jpg';
+</script>
+
+I’ve been doing some work lately with the Beaver Builder page builder for WordPress. For one feature, I needed to get a list of all the Beaver Builder modules that exist on a page. I couldn’t find any native functionality in the plugin to get that data though, so I built the class below to serve that purpose.
+
+## Example Usage
+
+```php
+function test_get_beaver_builder_module_list() {
+	$bb_module_list = new KM_Beaver_Builder_Module_List();
+
+	// Get a list of the BB modules on the current page.
+	$current_page_modules_list = $bb_module_list->get();
+
+	// Get a list of the BB modules on the page with a post ID of '123'.
+	$page_123_modules_list = $bb_module_list->get( 123 );
+
+	// Additional code.
+}
+add_action( 'wp', 'test_get_beaver_builder_module_list' );
+```
+
+An example showing the array of data you get back is below. They module types will appear in the list in the same order they appear on the page. So this particular page has a `heading` type module at the top of the page, a `rich-text` module below that, and a `class-product-recipe` module at the bottom.
+
+<img src={beaverBuilderModuleList} alt="Beaver Builder module list" />
+
+## The Class
+
+```php
+/**
+ * Class for getting a list of Beaver Builder modules.
+ */
+class KM_Beaver_Builder_Module_List {
+	/**
+	 * Get the list of Beaver Builder modules.
+	 *
+	 * @param  int $post_id The post ID. Default is the current post being
+	 *                      displayed or edited via Beaver Builder.
+	 *
+	 * @return array        A list of the Beaver Builder modules types for the post/page.
+	 */
+	public function get( $post_id = null ) {
+		if ( ! $this->requirements_met() ) {
+			return [];
+		}
+
+		$post_id = $post_id ?: FLBuilderModel::get_post_id( true );
+
+		if ( ! $this->should_module_list_be_created( $post_id ) ) {
+			return [];
+		}
+
+		// Set the post rendering ID.
+		FLBuilder::$post_rendering = $post_id;
+		// Force the builder to use this post ID.
+		FLBuilderModel::set_post_id( $post_id );
+
+		$rows = FLBuilderModel::get_nodes( 'row' );
+
+		$module_list = array_reduce( $rows, function( $module_list, $row ) {
+			return array_merge( $module_list, $this->get_row_module_list( $row ) );
+		}, [] );
+
+		// Stop forcing the builder to use this post ID.
+		FLBuilderModel::reset_post_id();
+		// Clear the post rendering ID.
+		FLBuilder::$post_rendering = null;
+
+		return $module_list;
+	}
+
+	/**
+	 * Are this class' requirements met?
+	 *
+	 * @return bool
+	 */
+	private function requirements_met() {
+		return class_exists( 'FLBuilder' ) && class_exists( 'FLBuilderModel' );
+	}
+
+	/**
+	 * Should/can a list of Beaver Builder modules for this post be created?
+	 *
+	 * @param  int $post_id The post ID.
+	 *
+	 * @return bool
+	 */
+	private function should_module_list_be_created( $post_id ) {
+		$enabled   = FLBuilderModel::is_builder_enabled( $post_id );
+		$do_render = apply_filters( 'fl_builder_do_render_content', true, $post_id );
+		$rendering = FLBuilder::$post_rendering === $post_id;
+
+		return $enabled && $do_render && ! $rendering;
+	}
+
+	/**
+	 * Get the list of Beaver Builder modules in a row.
+	 *
+	 * @param  object $row The row node.
+	 *
+	 * @return array       The list of modules.
+	 */
+	private function get_row_module_list( $row ) {
+		if ( ! FLBuilderModel::is_node_visible( $row ) || ! $this->does_row_template_file_exist( $row ) ) {
+			return [];
+		}
+
+		$groups = FLBuilderModel::get_nodes( 'column-group', $row );
+
+		return array_reduce( $groups, function( $module_list, $group ) {
+			return array_merge( $module_list, $this->get_group_module_list( $group ) );
+		}, [] );
+	}
+
+	/**
+	 * Does a template file exist for this row?
+	 *
+	 * @param  object $row The row node.
+	 *
+	 * @return bool
+	 */
+	private function does_row_template_file_exist( $row ) {
+		return (bool) FLBuilder::locate_template_file(
+			apply_filters( 'fl_builder_row_template_base', 'row', $row ),
+			apply_filters( 'fl_builder_row_template_slug', '', $row )
+		);
+	}
+
+	/**
+	 * Get the list of Beaver Builder modules in a group.
+	 *
+	 * @param  object $group The group node.
+	 *
+	 * @return array         The list of modules.
+	 */
+	private function get_group_module_list( $group ) {
+		if ( ! $this->does_group_template_file_exist( $group ) ) {
+			return [];
+		}
+
+		$cols = FLBuilderModel::get_nodes( 'column', $group );
+
+		return array_reduce( $cols, function( $module_list, $col ) {
+			return array_merge( $module_list, $this->get_column_module_list( $col ) );
+		}, [] );
+	}
+
+	/**
+	 * Does a template file exist for this group?
+	 *
+	 * @return bool
+	 */
+	private function does_group_template_file_exist() {
+		return (bool) FLBuilder::locate_template_file(
+			apply_filters( 'fl_builder_column_group_template_base', 'column-group', $group ),
+			apply_filters( 'fl_builder_column_group_template_slug', '', $group )
+		);
+	}
+
+	/**
+	 * Get the list of Beaver Builder modules for a column.
+	 *
+	 * @param  object $col The column node.
+	 *
+	 * @return array       The list of modules.
+	 */
+	private function get_column_module_list( $col ) {
+		$col = is_object( $col ) ? $col : FLBuilderModel::get_node( $col );
+
+		if ( ! FLBuilderModel::is_node_visible( $col ) ) {
+			return [];
+		}
+
+		$nodes = FLBuilderModel::get_nodes( null, $col );
+
+		return array_reduce( $nodes, function( $module_list, $node ) {
+			return array_merge( $module_list, $this->get_beaver_builder_node_module_list( $node ) );
+		}, [] );
+	}
+
+	/**
+	 * Get the list of Beaver Builder modules for a node.
+	 *
+	 * @param object $node The node.
+	 *
+	 * @return array       The modules.
+	 */
+	private function get_beaver_builder_node_module_list( $node ) {
+		$module_list = [];
+
+		if ( 'module' == $node->type && FLBuilderModel::is_module_registered( $node->settings->type ) ) {
+			$module_list[] = $node->settings->type;
+		} elseif ( 'column-group' == $node->type ) {
+			$module_list = array_merge( $module_list, $this->get_group_module_list( $node ) );
+		}
+
+		return $module_list;
+	}
+}
+```
+
+Happy Beaver Buildering!

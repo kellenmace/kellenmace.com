@@ -1,0 +1,66 @@
+---
+title: Edit Slug Button Missing in WordPress
+date: "2016-09-12T20:20:41.121Z"
+---
+
+If somewhere in the code for a WordPress site there is a filter hooked to `post_link` that’s replacing the URL so that it no longer contains the `%postname%` placeholder, WordPress will assume there’s nothing to edit. It will therefore output the permalink on the post edit screen without the edit button next to it, and the permalink’s slug won’t be editable.
+
+For an example of how to fix this, see the filters below. The top function one keeps the `%postname%` placeholder if it exists in the URL, or else uses the Post Name if there is one, or else uses the Post Title. The second function is to fix the post preview URLs so that they go to the correct preview URL rather than the one that the top function outputs.
+
+In order to use these, you’ll need to change quite a bit in order to target the post types you want in both, and build the URLs the way you want them in the top function. In order for the custom URLs to work on the site, you’ll also likely need to implement a new URL rewrite rule using [`add_rewrite_rule()`](https://developer.wordpress.org/reference/functions/add_rewrite_rule/).
+
+```php
+/**
+ * Changes all post links to the format 'newsroom/news/yyyy/mm/dd/%postname%'
+ *
+ * @param  string  $url  The post URL.
+ * @param  WP_Post $post The post.
+ * @return string  $url  The modified URL.
+ */
+function km_filter_post_links( $url, $post ) {
+
+   if ( 'post' === $post->post_type ) {
+
+      // If $url contains %postname% placeholder
+      if ( false !== strpos( $url, '%postname%' ) ) {
+         $slug = '%postname%';
+      } elseif ( $post->post_name ) {
+         $slug = $post->post_name;
+      } else {
+         $slug = sanitize_title( $post->post_title );
+      }
+
+      $date = DateTime::createFromFormat( 'Y-m-d H:i:s', $post->post_date )->format( 'Y/m/d' );
+      $url  = home_url( user_trailingslashit( 'newsroom/news/' . $date . '/' . $slug ) );
+
+   }
+
+   return $url;
+
+}
+add_filter( 'post_link' , 'km_filter_post_links', 10, 2 );
+
+
+/**
+ * Filter posts preview links to point to the correct URL.
+ *
+ * @param  string  $preview_link The preview link URL.
+ * @param  WP_Post $post         The post.
+ * @return string  $url          The modified link URL.
+ */
+function km_filter_post_preview_link( $preview_link, $post ) {
+
+   if ( 'post' === $post->post_type ) {
+
+      $preview_link = add_query_arg( array(
+         'p'       => $post->ID,
+         'preview' => 'true',
+      ), home_url( '/' ) );
+
+   }
+
+   return $preview_link;
+
+}
+add_filter( 'preview_post_link', 'km_filter_post_preview_link', 10, 2 );
+```

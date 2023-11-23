@@ -1,0 +1,25 @@
+---
+title: WordPress Hook After Options Page Save
+date: "2016-04-28T15:22:18.121Z"
+---
+
+If you want to hook into WordPress when an options page is saved and access the values that were entered, you can use `update_option_{$option}`.
+
+Let’s say for my options page, I added the setting like this:
+
+`register_setting( km_my_cool_options, km_my_cool_options );`
+
+I could then hook into when the options page is saved and access the old & new values like this:
+
+```php
+/**
+ * Hook into options page after save.
+ */
+public function km_hook_into_options_page_after_save( $old_value, $new_value ) {
+	if ( $old_value['some_option'] != $new_value['some_option'] ) {
+		// This value has been changed. Insert code here.
+	}
+
+}
+add_action( 'update_option_km_my_cool_options', 'km_hook_into_options_page_after_save', 10, 2 );
+```

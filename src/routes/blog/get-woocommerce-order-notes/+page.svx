@@ -1,0 +1,34 @@
+---
+title: Get All WooCommerce Order Notes
+date: "2016-11-17T21:16:02.121Z"
+---
+
+I’ve seen posts and documentation online for how to get just the customer notes for an order, but no great ones for how to get all WooCommerce order notes. Here’s my solution for that:
+
+```php
+/**
+ * Get all approved WooCommerce order notes.
+ *
+ * @param  int|string $order_id The order ID.
+ * @return array      $notes    The order notes, or an empty array if none.
+ */
+function km_get_order_notes( $order_id ) {
+	remove_filter( 'comments_clauses', array( 'WC_Comments', 'exclude_order_comments' ) );
+
+	$comments = get_comments( array(
+		'post_id' => $order_id,
+		'orderby' => 'comment_ID',
+		'order'   => 'DESC',
+		'approve' => 'approve',
+		'type'    => 'order_note',
+	) );
+
+	$notes = wp_list_pluck( $comments, 'comment_content' );
+
+	add_filter( 'comments_clauses', array( 'WC_Comments', 'exclude_order_comments' ) );
+
+	return $notes;
+}
+```
+
+You just pass that function the order ID (post ID) for any order and it returns an array of all the notes, or an empty array if there are none.

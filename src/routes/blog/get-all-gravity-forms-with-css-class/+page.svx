@@ -1,0 +1,51 @@
+---
+title: Get all Gravity Forms with CSS Class
+date: "2019-01-20T18:58:55.121Z"
+---
+
+<script>
+  import getGravityFormsWithCssClass from './get-gravity-forms-with-css-class.jpg';
+</script>
+
+The functions below can be used to get a list of all Gravity Forms whose fields have a specific CSS class:
+
+```php
+/**
+ * Get a list of Gravity Forms whose fields have a CSS class.
+ *
+ * @param string $css_class The CSS class to search for.
+ *
+ * @return array The list of forms in this format: [<form ID> - <form title>] => <array of fields that have CSS class>
+ */
+function get_gravity_forms_with_css_class( $css_class ) {
+	return array_reduce( GFAPI::get_forms(), function( $forms_with_css_class, $form ) use ( $css_class ) {
+		$fields_with_class = get_gravity_form_fields_with_css_class( $form, $css_class );
+
+		if ( $fields_with_class ) {
+			$forms_with_css_class[ "{$form['id']} - {$form['title']}" ] = $fields_with_class;
+		}
+
+		return $forms_with_css_class;
+	}, [] );
+}
+
+/**
+ * Get all fields in a Gravity Form that have a CSS class.
+ *
+ * @param  array  $form      The Gravity Form data.
+ * @param  string $css_class The CSS class to search for.
+ *
+ * @return array  Fields that have the CSS class or empty array if none.
+ */
+function get_gravity_form_fields_with_css_class( $form, $css_class ) {
+	return array_filter( $form['fields'], function( $field ) use ( $css_class ) {
+		return in_array( $css_class, explode( ' ', $field->cssClass ), true );
+	} );
+}
+```
+
+Calling the first function looks like `get_gravity_forms_with_css_class( 'list-users2' )` and the results it returns look like this:
+
+<img src={getGravityFormsWithCssClass} alt="Get Gravity Forms with CSS Class" />
+
+The keys of the array include the form ID and title. Each value is an array of all the fields within that form that have the CSS class.

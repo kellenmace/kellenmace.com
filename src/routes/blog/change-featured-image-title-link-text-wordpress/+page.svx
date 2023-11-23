@@ -1,0 +1,110 @@
+---
+title: Change featured image title and link text in WordPress
+date: "2016-04-01T17:16:37.121Z"
+---
+
+<script>
+	import setFeaturedImageText from './set-featured-image-text.jpg';
+</script>
+
+## Update for WordPress 4.3+
+
+As of WordPress 4.3, you can set the `Featured Image`, `Set featured image`, `Remove featured image` and `Use as featured image` labels to whatever custom text you’d like to use instead. You can do this when the post type is registered using `register_post_type()`.
+
+<img src={setFeaturedImageText} alt="set featured image text" />
+
+Here’s an example of how to to it:
+
+```php
+/**
+ * Register the Book custom post type.
+ */
+function km_register_book_post_type() {
+	register_post_type( 'company', [
+		'public'   => true,
+		'supports' => [ 'title', 'editor', 'thumbnail' ],
+		'labels'   => km_get_book_cpt_labels(),
+	] );
+}
+add_action( 'init', 'km_register+book_post_type' );
+
+/**
+ * Get the labels for the Book custom post type.
+ */
+function km_get_book_cpt_labels() {
+	return [
+		'name'                  => _x( 'Books', 'Post type general name', 'textdomain' ),
+		'singular_name'         => _x( 'Book', 'Post type singular name', 'textdomain' ),
+		'menu_name'             => _x( 'Books', 'Admin Menu text', 'textdomain' ),
+		'name_admin_bar'        => _x( 'Book', 'Add New on Toolbar', 'textdomain' ),
+		'add_new'               => __( 'Add New', 'textdomain' ),
+		'add_new_item'          => __( 'Add New Book', 'textdomain' ),
+		'new_item'              => __( 'New Book', 'textdomain' ),
+		'edit_item'             => __( 'Edit Book', 'textdomain' ),
+		'view_item'             => __( 'View Book', 'textdomain' ),
+		'all_items'             => __( 'All Books', 'textdomain' ),
+		'search_items'          => __( 'Search Books', 'textdomain' ),
+		'parent_item_colon'     => __( 'Parent Books:', 'textdomain' ),
+		'not_found'             => __( 'No books found.', 'textdomain' ),
+		'not_found_in_trash'    => __( 'No books found in Trash.', 'textdomain' ),
+
+		// Overrides the “Featured Image” label
+		'featured_image'        => __( 'Book Cover Image', 'textdomain' ),
+
+		// Overrides the “Set featured image” label
+		'set_featured_image'    => __( 'Set cover image', 'textdomain' ),
+
+		// Overrides the “Remove featured image” label
+		'remove_featured_image' => _x( 'Remove cover image', 'textdomain' ),
+
+		// Overrides the “Use as featured image” label
+		'use_featured_image'    => _x( 'Use as cover image', 'textdomain' ),
+    ];
+}
+```
+
+Further documentation is here:  
+[https://developer.wordpress.org/reference/functions/register_post_type/](https://developer.wordpress.org/reference/functions/register_post_type/)
+
+---
+
+## WordPress Versions Prior to 4.3
+
+For sites running a version of WordPress lower than 4.3, here’s how to change/filter the featured image metabox title and link text in WordPress:
+
+```php
+/*
+ * Change the featured image metabox title text
+ */
+function km_change_featured_image_metabox_title() {
+	remove_meta_box( 'postimagediv', 'my_post_type_name', 'side' );
+	add_meta_box( 'postimagediv', __( 'NEW TITLE TEXT', 'km' ), 'post_thumbnail_meta_box', 'my_post_type_name', 'side' );
+}
+add_action('do_meta_boxes', 'km_change_featured_image_metabox_title' );
+
+
+/*
+ * Change the featured image metabox link text
+ *
+ * @param  string $content Featured image link text
+ * @return string $content Featured image link text, filtered
+ */
+function km_change_featured_image_text( $content ) {
+
+	if ( 'my_post_type_name' === get_post_type() ) {
+		$content = str_replace( 'Set featured image', __( 'NEW SET TEXT HERE', 'km' ), $content );
+		$content = str_replace( 'Remove featured image', __( 'NEW REMOVE TEXT HERE', 'km' ), $content );
+	}
+
+	return $content;
+}
+add_filter( 'admin_post_thumbnail_html', 'km_change_featured_image_text' );
+```
+
+To use this code, just make these changes:
+
+Change `my_post_type_name` to the name of the post type for which you want to change the featured image text.
+Change `NEW TITLE TEXT`, `NEW SET TEXT HERE` and `NEW REMOVE TEXT HERE` to the new text you want to use.
+Change `km` to the function prefix & text domain of your choice.
+
+Note: The default `Remove featured image` text is still visible immediately after an image is selected. The code above does not address that.

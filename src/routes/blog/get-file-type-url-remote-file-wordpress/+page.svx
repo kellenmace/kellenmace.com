@@ -1,0 +1,24 @@
+---
+title: Get File Type by URL for a Remote File in WordPress
+date: "2016-09-08T17:32:49.121Z"
+---
+
+If you want to get the file mime type for a remote file and you have its URL, the function below can be used.
+
+## Example
+
+If the remote file is a png image with a url of `http://example.com/directory/image.png?ver=123`, passing in that URL to this function would return `image/png`.
+
+```php
+/**
+ * Get the file mime type for a file by its URL.
+ *
+ * @param  $url The URL to the file.
+ * @return      The file mime type or empty string on failure.
+ */
+function km_get_file_type_by_url( $url ) {
+	$response  = wp_remote_get( $url );
+
+	return wp_remote_retrieve_header( $response, 'content-type' );
+}
+```
