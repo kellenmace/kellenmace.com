@@ -72,8 +72,9 @@ const redirects: Record<string, string> = {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
-	if (redirects[event.url.pathname]) {
-		throw redirect(301, redirects[event.url.pathname]);
+	const pathnameWithoutTrailingSlash = event.url.pathname.replace(/\/$/, '');
+	if (redirects[pathnameWithoutTrailingSlash]) {
+		throw redirect(301, redirects[pathnameWithoutTrailingSlash]);
 	}
 
 	return await resolve(event);
