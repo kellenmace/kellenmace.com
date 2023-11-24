@@ -22,10 +22,11 @@
 					nostalgic and evocative <a href="https://www.youtube.com/watch?v=dmkPQeKVR8U"
 						>Phone Call</a
 					>
-					by Jon Brion, from the Eternal Sunshine of the Spotless Mind soundtrack– hence the name "Harp
-					Eternal". All instruments were played by me on a MIDI keyboard, with the exception of the acoustic
-					guitar, which I played live and mic'd. The bassline with lots of rests is inspired by some
-					of Tim Commerford's playing, such as the basslines in the verses of Rage Against the Machine's
+					by Jon Brion, from the Eternal Sunshine of the Spotless Mind soundtrack, and features harp
+					samples– hence the name "Harp Eternal". All instruments were played by me on a MIDI keyboard,
+					with the exception of the acoustic guitar, which I played live and mic'd. The bassline with
+					lots of rests is inspired by some of Tim Commerford's playing, such as the basslines in the
+					verses of Rage Against the Machine's
 					<a href="https://www.youtube.com/watch?v=j_zyb-XXWz0">Testify</a>
 					and <a href="https://www.youtube.com/watch?v=n6cBRx2Ie6A">Guerrilla Radio</a>. I wrote
 					this song when I was in college, around the 2004-2007 time frame.
@@ -37,10 +38,10 @@
 				<p>
 					I wrote this song when I was in high school. The high-gain synth lead lines are inspired
 					by <a href="https://en.wikipedia.org/wiki/The_Prodigy">The Prodigy</a>, one of my favorite
-					electronic music artists. The crash and trash splash cymbals in the track were recorded
-					live, and all other instruments are MIDI-triggered. This song has several different drum
-					beats throughout, which you could argue makes it inconsistent, but I think switching up
-					the drum parts keeps things interesting.
+					electronic music artists. The crash and trash splash cymbals were recorded live, and all
+					other instruments are MIDI-triggered. This song has several different drum beats
+					throughout, which you could argue makes it inconsistent, but I think switching up the drum
+					parts keeps things interesting in this case.
 				</p>
 				<audio controls src="/music/Kellen Mace - Streamline.mp3" />
 			</div>
@@ -49,9 +50,9 @@
 				<p>
 					This song starts with me playing the intro to <a
 						href="https://www.youtube.com/watch?v=9rDGc69FQcY">Solfeggio</a
-					> by C.P.E Bach, then transitions to me playing a minor pentatonic solo over a Metallica chord
-					progression, because why not? This song was recorded in my college dorm room with an acoustic
-					guitar, a few takes, and a ton of digital reverb.
+					> by C.P.E Bach, then transitions to me playing a guitar solo over a Metallica chord progression,
+					because why not? This song was recorded in my college dorm room with an acoustic guitar, a
+					few takes, and some lush digital reverb.
 				</p>
 				<audio controls src="/music/Kellen Mace - Classical Guitar.mp3" />
 			</div>
