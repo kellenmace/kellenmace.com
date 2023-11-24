@@ -1,7 +1,7 @@
 import { redirect, type Handle } from '@sveltejs/kit';
 
 // prettier-ignore
-const redirects = {
+const redirects: Record<string, string> = {
   '/add-unfiltered_html-capability-to-admins-or-editors-in-wordpress-multisite': '/blog/add-unfiltered_html-capability-to-admins-or-editors-in-wordpress-multisite',
   '/advanced-custom-fields-metabox-priority-for-top-above-publish': '/blog/advanced-custom-fields-metabox-priority-for-top-above-publish',
   '/advanced-custom-fields-wysiwyg-toolbar-buttons-missing': '/blog/advanced-custom-fields-wysiwyg-toolbar-buttons-missing',
@@ -75,5 +75,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (redirects[event.url.pathname]) {
 		throw redirect(301, redirects[event.url.pathname]);
 	}
+
 	return await resolve(event);
 };
