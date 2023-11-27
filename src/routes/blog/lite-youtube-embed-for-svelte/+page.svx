@@ -171,3 +171,6 @@ You can use it like this:
 You can update the `posterImageSrc="/video-poster-image.png"` attribute to point to the image you'd like to use for the video's facade. For SvelteKit projects, this file can be saved to the `static` folder, like this: `/static/video-poster-image.png`.
 
 Just like [Lite YouTube Embed](https://github.com/paulirish/lite-youtube-embed), all code in this blog post is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+Since I wrote this code, this port of Lite YouTube Embed to Svelte has been created, as well:
+https://www.npmjs.com/package/svelte-lite-youtube-embed
