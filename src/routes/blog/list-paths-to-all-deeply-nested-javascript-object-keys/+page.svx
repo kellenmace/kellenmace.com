@@ -1,0 +1,78 @@
+---
+title: List Paths to All Deeply Nested Keys in JavaScript Objects, Recursively
+date: "2024-01-19T19:18:34.136Z"
+---
+
+The `getKeyPaths` function below can be used to get a list of paths within a deeply nested JavaScript or JSON object with a certain key (property).
+
+```js
+function getKeyPaths(obj, key, currentPath = '', result = []) {
+  if (typeof obj !== 'object' || obj === null) {
+    return result;
+  }
+
+  for (const property in obj) {
+    if (obj.hasOwnProperty(property)) {
+      const newPath = currentPath === '' ? property : `${currentPath}.${property}`;
+
+      if (Array.isArray(obj[property])) {
+        obj[property].forEach((item, index) => {
+          getKeyPaths(item, key, `${newPath}[${index}]`, result);
+        });
+      } else {
+        getKeyPaths(obj[property], key, newPath, result);
+      }
+
+      if (property === key) {
+        result.push(newPath);
+      }
+    }
+  }
+
+  return result;
+}
+```
+
+## Example Usage
+
+```js
+const data = {
+  results: {
+    characters: [
+      {
+        name: 'newman'
+      },
+      {
+        name: 'jerry'
+      }
+    ]
+  },
+  platform: {
+    nintendo: {
+      systems: [
+        {
+          name: 'Switch'
+        },
+        {
+          name: 'Wii'
+        }
+      ]
+    }
+  }
+};
+
+const key = 'name';
+const accessPaths = getKeyPaths(data, key);
+
+console.log(accessPaths);
+
+// Result:
+// [
+//   "results.characters[0].name",
+//   "results.characters[1].name",
+//   "platform.nintendo.systems[0].name",
+//   "platform.nintendo.systems[1].name"
+// ]
+```
+
+You can then copy and paste any of these paths into your code project as needed to access the keys you need.
