@@ -337,7 +337,7 @@ function parseLocation(locationStr: string): {
 
 ## Usage
 
-With this code in place, you can then import and call the `scrapeJobs()` TypeScript function from anywhere in your project, like this:
+With this code in place, you can import and call the `scrapeJobs()` TypeScript function from anywhere in your project, like this:
 
 ```ts
 
