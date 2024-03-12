@@ -3,7 +3,7 @@ title: Work with the JobSpy Python Package in JavaScript/TypeScript
 date: "2024-03-12T16:31:22.348Z"
 ---
 
-This post provides code for working with the [JobSpy Python package](https://github.com/Bunsly/JobSpy) in a JavaScript/TypeScript application.
+This post provides code for working with the [JobSpy](https://github.com/Bunsly/JobSpy) Python package in a JavaScript/TypeScript application.
 
 Approach:
 
@@ -90,8 +90,8 @@ This is the code I used in my SvelteKit TypeScript app. You can modify it for yo
 
 * Make a `fetch` call to the `/api/scrape-jobs` endpoint
 * Validate the data with [Zod](https://zod.dev/)
-* Does some data manipulation to parse `city`, `state`, and `country` data out of `location` and `fulltime`, `parttime`, `internship`, and `contract` out of `job_type`.
-* Returns a JSON response.
+* Do some data manipulation to parse `city`, `state`, and `country` data out of `location` and `fulltime`, `parttime`, `internship`, and `contract` out of `job_type`.
+* Return a JSON response.
 
 ```ts
 import { z } from "zod";
