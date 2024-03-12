@@ -1,0 +1,350 @@
+---
+title: Work with the JobSpy Python Package in JavaScript/TypeScript
+date: "2024-03-12T16:31:22.348Z"
+---
+
+This post provides code for working with the [JobSpy Python package](https://github.com/Bunsly/JobSpy) in a JavaScript/TypeScript application.
+
+Approach:
+
+1. Create an endpoint in Python that receives arguments as query string parameters, calls JobSpy's `scrape_jobs()` function and passes those arguments through to it, converts the result to JSON and returns the response.
+2. Call that endpoint from our TypeScript code, validate the data with [Zod](https://zod.dev/) and return the response.
+
+
+## Python endpoint code
+
+My project is hosted on Vercel, so I created a serverless function that runs this code. To do so, put it in `/api/scrape-jobs.py` and create a `/api/requirements.txt` file that contains the line "python-jobspy" to specify the script's dependency. Documentation on how to create Python serverless functions on Vercel is here: [https://vercel.com/docs/functions/runtimes/python](https://vercel.com/docs/functions/runtimes/python).
+
+To get this working with local development, you can [install the Vercel CLI](https://vercel.com/docs/cli) and run `vercel dev` from your project root to get the serverless function running. Then you'll be able to fire off requests from your TS/JS app to this endpoint at `http://localhost:3000/api/scrape-jobs`.
+
+```python
+from http.server import BaseHTTPRequestHandler
+from urllib import parse
+import json
+from jobspy import scrape_jobs
+import pandas as pd
+
+# Test URL:
+# http://localhost:3000/api/scrape-jobs?site_name=indeed&search_term=influencer%20marketing
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        # Parse query parameters
+        query_components = parse.parse_qs(parse.urlparse(self.path).query)
+        site_name = query_components.get('site_name', [''])[0]
+        search_term = query_components.get('search_term', [''])[0]
+
+        if not site_name or not search_term:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'site_name and search_term are required'}).encode())
+            return
+
+        try:
+            # Prepare optional parameters for scrape_jobs() function
+            optional_params = {}
+            for key, value in query_components.items():
+                if key != 'site_name' and key != 'search_term':
+                    if len(value) == 1:
+                        optional_params[key] = value[0]
+                    else:
+                        optional_params[key] = value
+
+            # Scrape jobs data with optional parameters
+            jobs: pd.DataFrame = scrape_jobs(
+                site_name=site_name,
+                search_term=search_term,
+                **optional_params
+            )
+
+            # Convert DataFrame to JSON-compatible dictionary
+            jobs_dict = jobs.to_dict(orient='records')
+
+            for job in jobs_dict:
+                # Convert NaN/falsy values to None
+                job['emails'] = job['emails'] if pd.notna(job['emails']) else None
+                job['job_type'] = job['job_type'] if pd.notna(job['job_type']) else None
+                job['min_amount'] = job['min_amount'] if pd.notna(job['min_amount']) else None
+                job['max_amount'] = job['max_amount'] if pd.notna(job['max_amount']) else None
+                job['currency'] = job['currency'] if pd.notna(job['currency']) else None
+                job['company_url'] = job['company_url'] if pd.notna(job['company_url']) else None
+                job['interval'] = job['interval'] if pd.notna(job['interval']) else None
+                # Convert date to a string in yyyy-mm-dd format
+                job['date_posted'] = job['date_posted'].isoformat()
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(jobs_dict).encode())
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
+```
+
+
+## TypeScript consumer code
+
+This is the code I used in my SvelteKit TypeScript app. You can modify it for your use. It does this:
+
+* Make a `fetch` call to the `/api/scrape-jobs` endpoint
+* Validate the data with [Zod](https://zod.dev/)
+* Does some data manipulation to parse `city`, `state`, and `country` data out of `location` and `fulltime`, `parttime`, `internship`, and `contract` out of `job_type`.
+* Returns a JSON response.
+
+```ts
+import { z } from "zod";
+import { dev } from "$app/environment";
+
+export const siteNames = [
+  "linkedin",
+  "zip_recruiter",
+  "indeed",
+  "glassdoor",
+] as const;
+const jobTypes = ["fulltime", "parttime", "internship", "contract"];
+
+type SiteName = (typeof siteNames)[number];
+
+type ScrapeJobsQueryParams = {
+  site_name: SiteName | SiteName[];
+  search_term: string;
+  location?: string;
+  distance?: number;
+  is_remote?: boolean;
+  job_type?: string;
+  easy_apply?: boolean;
+  results_wanted?: number;
+  country_indeed?: string;
+  hyperlinks?: boolean;
+  proxy?: string;
+  description_format?: string;
+  linkedin_fetch_description?: boolean;
+  linkedin_company_ids?: number[] | null;
+  offset?: number;
+  hours_old?: number | null;
+};
+
+const jobSchema = z.object({
+  site: z.enum(siteNames),
+  date_posted: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().min(1),
+  company: z.string().min(1),
+  company_url: z.string().min(1).nullable(),
+  job_url: z.string().min(1),
+  location: z.string().min(1),
+  job_type: z
+    .string()
+    .nullable()
+    .refine(
+      (value) => {
+        if (!value) return true; // Allow null values
+        const types = value.split(", ").map((type) => type.trim());
+        return types.every((type) => jobTypes.includes(type));
+      },
+      {
+        message: "Invalid job type specified.",
+      }
+    ),
+  interval: z
+    .enum(["yearly", "monthly", "weekly", "daily", "hourly"])
+    .nullable(),
+  min_amount: z.number().positive().nullable(),
+  max_amount: z.number().positive().nullable(),
+  currency: z.string().min(1).nullable(),
+  is_remote: z.boolean(),
+  num_urgent_words: z.number().int().nonnegative(),
+  emails: z.string().min(1).nullable(),
+  description: z.string().min(1),
+});
+
+const jobsArraySchema = z.array(jobSchema);
+
+const baseUrl = dev
+  ? "http://localhost:3000"
+  : "https://my-production-site.com";
+
+export async function scrapeJobs(params: ScrapeJobsQueryParams) {
+  // Endpoint for the Python serverless function defined in `/api/scrape-jobs.py`
+  const url = new URL(`${baseUrl}/api/scrape-jobs`);
+
+  // Add query parameters to the URL
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.append(
+        key,
+        Array.isArray(value) ? value.join(",") : value.toString()
+      );
+    }
+  });
+
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const jobs = await response.json();
+
+    return jobsArraySchema.parse(jobs).map(extractJobData);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error;
+  }
+}
+
+type JobSchemaType = z.infer<typeof jobSchema>;
+
+function extractJobData(job: JobSchemaType) {
+  const { city, state, country } = parseLocation(job.location);
+  const { fulltime, parttime, internship, contract } = parseJobTypes(
+    job.job_type
+  );
+
+  return {
+    site: job.site,
+    date_posted: job.date_posted,
+    title: job.title,
+    company: job.company,
+    company_url: job.company_url,
+    job_url: job.job_url,
+    city,
+    state,
+    country,
+    fulltime,
+    parttime,
+    internship,
+    contract,
+    interval: job.interval,
+    min_amount: job.min_amount,
+    max_amount: job.max_amount,
+    currency: job.currency,
+    is_remote: job.is_remote,
+    num_urgent_words: job.num_urgent_words,
+    emails: job.emails,
+    description: job.description,
+  };
+}
+
+function parseJobTypes(jobType: string | null) {
+  if (!jobType) {
+    return {
+      fulltime: false,
+      parttime: false,
+      internship: false,
+      contract: false,
+    };
+  }
+
+  // Split the job type string by comma and trim any whitespace
+  const jobTypesParsed = jobType.split(",").map((type) => type.trim());
+
+  return {
+    fulltime: jobTypesParsed.includes(jobTypes[0]),
+    parttime: jobTypesParsed.includes(jobTypes[1]),
+    internship: jobTypesParsed.includes(jobTypes[2]),
+    contract: jobTypesParsed.includes(jobTypes[3]),
+  };
+}
+
+const usaStateAbbreviations = [
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
+];
+
+function parseLocation(locationStr: string): {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+} {
+  // Split the location string by comma and trim any whitespace
+  const parts = locationStr.split(",").map((part) => part.trim());
+
+  let city: string | null = null;
+  let state: string | null = null;
+  let country: string | null = null;
+
+  if (parts.length === 3) {
+    [city, state, country] = parts;
+  } else if (parts.length === 2) {
+    if (parts[1].length === 2 || parts[1] === parts[1].toUpperCase()) {
+      [state, country] = parts;
+    } else {
+      [city, country] = parts;
+    }
+  } else if (parts.length === 1) {
+    country = parts[0];
+  }
+
+  // Check if the parsed state is in the list of USA state abbreviations
+  if (state && !usaStateAbbreviations.includes(state)) {
+    state = null;
+  }
+
+  return { city, state, country };
+}
+```
+
+
+## Usage
+
+With this code in place, you can then import and call the `scrapeJobs()` TypeScript function from anywhere in your project, like this:
+
+```ts
+
+const jobs = await scrapeJobs({
+	site_name: ['indeed', 'linkedin']
+	search_term: 'web developer',
+	results_wanted: 50,
+	offset: 0
+});
+```
