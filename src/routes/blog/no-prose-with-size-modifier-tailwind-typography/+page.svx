@@ -1,0 +1,22 @@
+---
+title: Use no-prose with size modifier in Tailwind Typography
+date: "2024-11-18T22:27:44.148Z"
+---
+
+Using TailwindTypography's `no-prose` class to undo styles added by `prose` works great, if you're also using a size modifier such as `prose-lg` those styles don't get removed.
+
+Thankfully, there's an easy solution to this. Just use `prose-base` to undo the styles applied by the size modifier class, like this:
+
+```html
+<article class="prose prose-lg">
+  <h1>My Heading</h1>
+  <p>...</p>
+
+  <div class="not-prose prose-base">
+    <!-- Some example or demo that needs to be prose-free -->
+  </div>
+
+  <p>...</p>
+  <!-- ... -->
+</article>
+```
