@@ -25,11 +25,15 @@ As of November, 2024, I experienced another bug preventing me from being able to
 If you have the invisible games list problem and multiple games loaded into DOSBox Game Launcher though, I found that you can hover your mouse cursor over the invisible rows of the games list under where the `Run profile` icon is, pausing at various points until you see a tooltip that says "Cyberflix Incorporated". When you see that tooltip, click the left mouse button to select the game, then click `Run profile` to launch it. Clearly, that's a super hacky workaround, but at least you'll be able to play the game!
 
 
-## Resources
+## Keyboard shortcuts
 The list of keyboard shortcuts for DOSBox is here:
 [https://www.dosbox.com/wiki/Special_Keys](https://www.dosbox.com/wiki/Special_Keys)
 
-To use the F- keys on macOS, you need to hold down the `fn` key.
+To use the F- keys on macOS, you need to hold down the `fn` key. To un-capture the mouse cursor for example, hit `ctrl`+`fn`+`F10`.
+
+
+## Game saves
+I found that trying to save the game in several of the drives listed in the save window results in DOSBox crashing. Thankfully, the `c` drive seems to work great, though. From inside of Dust, save the game to `c:\` (not a subfolder within `c`, just the root of the `c` drive.). This will result in the game being saved in the `~/Library/dbgl/dosroot/dust/WIN31` folder on your macOS host machine. So you can open that folder on your Mac to access the `.RTD` save files, if you need to.
 
 
 ## Thanks
