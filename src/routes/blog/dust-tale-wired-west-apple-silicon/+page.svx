@@ -1,0 +1,39 @@
+---
+title: "Play Dust: A Tale of the Wired West on an Apple Silicon ARM-based Mac"
+date: "2024-11-21T18:41:58.650Z"
+---
+
+I have fond memories of playing [Dust: A Tale of the Wired West](https://en.wikipedia.org/wiki/Dust:_A_Tale_of_the_Wired_West) with one of my best friends growing up. It's a great game!
+
+You can follow the steps below to play Dust on an Apple Silicon ARM-based Mac using [DOSBox Game Launcher](https://dbgl.org/).
+
+1. Make sure you have [Homebrew](https://brew.sh/) installed.
+1. Run `java --version` on the command line to see if you have Java installed.
+1. If you do not have Java installed, run `brew install --cask temurin` to install the [Eclipse Temurin Java Development Kit](https://adoptium.net/). Run `java --version` again to confirm that installation was successful. If it was, an OpenJDK version number will be printed on the command line.
+1. Download and install the macOS ARM version of [DOSBox Game Launcher](https://dbgl.org/) from their website.
+1. Download the game archive [dust.dbgl.zip](https://www.danielhobi.ch/dust/dust.dbgl.zip) without extracting it.
+1. Open the DOSBox Game Launcher app (the `DBGL` app in your `Applications` folder).
+1. In the top menu bar, go to `Profiles` > `Import` and select the `dust.dbgl.zip` file.
+1. Keep pressing the `Next` button on each screen to accept the defaults and proceed with the import. As of November, 2024, I experienced a bug in DOSBox Game Launcher where the row of `Previous`, `Next` and `Cancel` buttons at the bottom of these screens were not visible. I had to hit `tab` repeatedly in order for them to be highlighted with an outline so I could tell where they are and click them. You can search for "DOSBox game launcher" on YouTube to find a video of someone else importing games so you can see the positioning of each of them and tell which is which.
+1. When the installation finishes, you should be able to click `Run Profile` to boot up the game.
+1. Enjoy! 🤠
+
+
+## Resources
+The list of keyboard shortcuts for DOSBox is here:
+[https://www.dosbox.com/wiki/Special_Keys](https://www.dosbox.com/wiki/Special_Keys)
+
+To use the F- keys on macOS, you need to hold down the `fn` key.
+
+
+## A note on not being able to see the games list
+As of November, 2024, I experienced another bug preventing me from being able to see the games list- everything just appeared gray. If you experience the same thing and Dust is the only game you have imported, I think you'll be able to just click `Run profile` and it will boot up your one and only game.
+
+If you have the invisible games list problem and multiple games loaded into DOSBox Game Launcher though, I found that you can hover your mouse cursor over the invisible rows of the games list under where the `Run profile` icon is, pausing at various points until you see a tooltip that says "Cyberflix Incorporated". When you see that tooltip, click the left mouse button to select the game, then click `Run profile` to launch it. Clearly, that's a super hacky workaround, but at least you'll be able to play the game!
+
+
+## Thanks
+Some of the steps in this guide and the linked zip file are from this page on Daniel Hobi's site:
+https://www.danielhobi.ch/dust/
+
+It looks like he also has [game packs and instructions](https://www.danielhobi.ch/taoot/) for running Cyberflix's Titanic game, if you want to play that, too.
