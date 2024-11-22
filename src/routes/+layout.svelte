@@ -1,6 +1,6 @@
 <script lang="ts">
 	import 'open-props/style';
-	import 'open-props/normalize';
+	import 'open-props/normalize.dark.min.css';
 	import 'open-props/buttons';
 </script>
 
@@ -21,7 +21,6 @@
 	}
 	:global(a) {
 		text-decoration: underline;
-		/* font-size: 1.25rem; */
 	}
 	:global(a[href]) {
 		text-decoration-color: var(--hot-pink);
