@@ -14,22 +14,16 @@ You can follow the steps below to play Dust on an Apple Silicon ARM-based Mac us
 1. Download the game archive [dust.dbgl.zip](https://www.danielhobi.ch/dust/dust.dbgl.zip) without extracting it.
 1. Open the DOSBox Game Launcher app (the `DBGL` app in your `Applications` folder).
 1. In the top menu bar, go to `Profiles` > `Import` and select the `dust.dbgl.zip` file.
-1. Keep pressing the `Next` button on each screen to accept the defaults and proceed with the import. As of November, 2024, I experienced a bug in DOSBox Game Launcher where the row of `Previous`, `Next` and `Cancel` buttons at the bottom of these screens were not visible. I had to hit `tab` repeatedly in order for them to be highlighted with an outline so I could tell where they are and click them. You can search for "DOSBox game launcher" on YouTube to find a video of someone else importing games so you can see the positioning of each of them and tell which is which.
+1. Keep pressing the `Next` button on each screen to accept the defaults and proceed with the import.
 1. When the installation finishes, you should be able to click `Run Profile` to boot up the game.
 1. Enjoy! 🤠
-
-
-## A note on not being able to see the games list
-As of November, 2024, I experienced another bug preventing me from being able to see the games list- everything just appeared gray. If you experience the same thing and Dust is the only game you have imported, I think you'll be able to just click `Run profile` and it will boot up your one and only game.
-
-If you have the invisible games list problem and multiple games loaded into DOSBox Game Launcher though, I found that you can hover your mouse cursor over the invisible rows of the games list under where the `Run profile` icon is, pausing at various points until you see a tooltip that says "Cyberflix Incorporated". When you see that tooltip, click the left mouse button to select the game, then click `Run profile` to launch it. Clearly, that's a super hacky workaround, but at least you'll be able to play the game!
 
 
 ## Keyboard shortcuts
 The list of keyboard shortcuts for DOSBox is here:
 [https://www.dosbox.com/wiki/Special_Keys](https://www.dosbox.com/wiki/Special_Keys)
 
-To use the F- keys on macOS, you need to hold down the `fn` key. To un-capture the mouse cursor for example, hit `ctrl`+`fn`+`F10`.
+To use the F- keys on macOS, you need to hold down the `fn` key. To un-capture the mouse cursor for example, hit `ctrl`+`fn`+`F10`. To toggle full screen, press `option` + `return`.
 
 
 ## Game saves
