@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let size;
+	let { size } = $props();
 
 	const sizeMappings: Record<number, string> = {
 		1: '.25rem',
@@ -20,4 +20,4 @@
 	} as const;
 </script>
 
-<div style={`padding-top: ${sizeMappings[size]}`} />
+<div style={`height: ${sizeMappings[size]};`} />

@@ -1,7 +1,7 @@
 <div class="container">
 	<div class="content-wrap">
 		{#each Array(2200) as _}
-			<div class="sparkle" />
+			<div class="sparkle"></div>
 		{/each}
 	</div>
 </div>
@@ -46,10 +46,10 @@
 	}
 	@keyframes shine {
 		50% {
-			background-color: rebeccapurple;
+			background-color: #ff269e;
 		}
 		100% {
-			background-color: powderblue;
+			background-color: #fff;
 		}
 	}
 </style>

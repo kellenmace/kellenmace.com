@@ -1,7 +1,7 @@
 <script lang="ts">
-	export let pageTitle;
+	let { pageTitle } = $props();
 
-	let docTitle = pageTitle ? `${pageTitle} | Kellen Mace` : 'Kellen Mace';
+	let docTitle = $derived(() => (pageTitle ? `${pageTitle} | Kellen Mace` : 'Kellen Mace'));
 </script>
 
 <svelte:head>
