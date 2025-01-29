@@ -11,9 +11,11 @@ date: "2016-04-01T17:16:37.121Z"
 
 As of WordPress 4.3, you can set the `Featured Image`, `Set featured image`, `Remove featured image` and `Use as featured image` labels to whatever custom text you’d like to use instead. You can do this when the post type is registered using `register_post_type()`.
 
+
+<!-- svelte-ignore a11y_img_redundant_alt -->
 <img src={setFeaturedImageText} alt="set featured image text" />
 
-Here’s an example of how to to it:
+Here's an example of how to to it:
 
 ```php
 /**

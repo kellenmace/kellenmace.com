@@ -23,7 +23,12 @@ You can follow the steps below to play Dust on an Apple Silicon ARM-based Mac us
 The list of keyboard shortcuts for DOSBox is here:
 [https://www.dosbox.com/wiki/Special_Keys](https://www.dosbox.com/wiki/Special_Keys)
 
-To use the F- keys on macOS, you need to hold down the `fn` key. To un-capture the mouse cursor for example, hit `ctrl`+`fn`+`F10`. To toggle full screen, press `option` + `return`.
+To use the F-keys on macOS, you need to hold down the `fn` key.
+
+Two of the most useful shortcuts are:
+
+- `ctrl`+`fn`+`F10` - un-capture the mouse cursor
+- `option`+`return` - toggle fullscreen mode
 
 
 ## Game saves

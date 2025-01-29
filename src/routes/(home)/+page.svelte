@@ -9,12 +9,13 @@
 	<Sparkles />
 	<section class="hero">
 		<h1 class="hero-heading">Kellen Mace</h1>
-		<p class="tagline">Web dev, musician & indie hacker</p>
+		<p class="tagline">Web dev, musician & entrepreneur</p>
 	</section>
 	<VerticalSpacer size={8} />
 	<section class="bio">
 		<p>
-			Hi! I'm Kellen, founder of <a href="https://videomentions.com/">VideoMentions</a>, Engineering
+			Hi! I'm Kellen, founder of <a href="https://videomentions.com/">VideoMentions</a> &
+			<a href="https://influencermarketingjobs.net/">Influencer Marketing Jobs</a>, Engineering
 			Manager at <a href="https://wpengine.com/">WP Engine</a>, and musician.
 		</p>
 		<picture>
@@ -89,7 +90,7 @@
 		background-image: none;
 		position: relative;
 		grid-column: 1 / -1;
-		max-width: 600px;
+		max-width: 700px;
 		width: min(100% - 2rem, 40rem);
 		margin-inline: auto;
 		padding-inline: var(--size-fluid-4);

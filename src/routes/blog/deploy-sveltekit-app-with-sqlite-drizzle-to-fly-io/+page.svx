@@ -1,6 +1,6 @@
 ---
 title: Deploy a SvelteKit App with SQLite & Drizzle to Fly.io
-date: "2024-01-29T15:56:55.031Z"
+date: "2025-01-29T15:56:55.031Z"
 ---
 
 This post covers how to create a new [SvelteKit](https://svelte.dev/docs/kit/introduction) app that uses [SQLite](https://www.sqlite.org/index.html) and [Drizzle](https://orm.drizzle.team/) and deploy that app to [Fly.io](https://fly.io/).
@@ -11,13 +11,14 @@ Note that this does not cover using [LiteFS - Distributed SQLite · Fly Docs](ht
 
 ### 1. Create app
 
-Per the Svelte CLI docs, use the [`sv create` command](https://svelte.dev/docs/cli/sv-create) to scaffold out a new SvelteKit site.
+Per the Svelte CLI docs, use the [`npx sv create`](https://svelte.dev/docs/cli/sv-create) command to scaffold out a new SvelteKit site.
 
 When asked which integrations you want, check the box for `Drizzle`.
 
 When asked which SQLite client you want to use, check the box for `better-sqlite3`. Since Fly.io is a "serverful" environment that runs Node.js, this is the appropriate package to choose.
 
 This will accomplish the following things:
+
 - Install the NPM packages needed for Drizzle and better-sqlite3.
 - Add a `DATABASE_URL=local.db` environment variable to your `.env` file to specify where the SQLite database is located on disk.
 - Create a `src/lib/server/db/index.ts` file where a better-sqlite3 instance is created and a Drizzle client is exported for your app to use.
@@ -30,25 +31,24 @@ Run `npm run db:push` to use the database schema to generate a new database name
 ### 2. Configure your app to run on Fly.io
 
 Update `src/lib/server/db/index.ts` to this:
+
 ```ts
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
+import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
-let dbInstance: ReturnType<typeof drizzle> | null = null;
+export let db: ReturnType<typeof drizzle>;
 
-export const getDb = () => {
-	if (!dbInstance) {
-		const client = new Database(env.DATABASE_URL);
-		dbInstance = drizzle(client);
-	}
-	return dbInstance;
-};
+if (!building) {
+	const client = new Database(env.DATABASE_URL);
+	db = drizzle(client);
+}
 ```
 
 Here's why:
-The code that the `sv create` command initially creates in `src/lib/server/db/index.ts` calls `new Database(env.DATABASE_URL)` as soon as the file is loaded which tries to access the database. Since Fly Machines do not have access to Volumes at buildtime however, leaving this code in place will result in a build error since 
-better-sqlite3 will be unable to access the database on the volume. So for that reason, it is necessary to switch to the lazy initialization pattern above. This new code will result in successful builds on Fly.
+The code that the `sv create` command initially creates in `src/lib/server/db/index.ts` calls `new Database(env.DATABASE_URL)` as soon as the file is loaded and tries to connect to the database. Since Fly Machines do not have access to Volumes at buildtime however, leaving this code in place will result in a build error since 
+better-sqlite3 will be unable to access the database on the volume. This new code confirms that a build is not in progress before attempting to connect to the database, which results in successful builds on Fly.
 
 Follow the [Run a SvelteKit App](https://fly.io/docs/js/frameworks/svelte/) page of the Fly.io docs to configure your SvelteKit app to run on their platform. By the end of that guide, you should have your app deployed to Fly.
 
@@ -68,7 +68,7 @@ Run `fly status` and ensure that your VM has a `STATE` of `started`. If it doesn
 
 Run `fly ssh sftp shell` to SSH into your Fly machine.
 
-From your project's root directory, run `put local.db /data/production.db` to copy your local database to production.
+Run `put local.db /data/production.db` to copy your local database to production.
 
 Run `ls -l /data` to confirm the file was uploaded successfully.
 
@@ -84,10 +84,8 @@ Put the code below in a `src/routes/api/add-user/+server.ts` file to create a ne
 
 ```ts
 import type { RequestHandler } from './$types';
-import { getDb } from '$lib/server/db';
+import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
-
-const db = getDb();
 
 export const GET: RequestHandler = async () => {
 	try {
@@ -101,17 +99,15 @@ export const GET: RequestHandler = async () => {
 
 	return new Response('User added');
 };
-
 ```
 
 Put this code in a `src/routes/get-user/+page.server.ts` file to fetch user data from the database and send it to the get-user page component as props.
 
 ```ts
+import { eq } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
-import { getDb } from '$lib/server/db';
+import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
-
-const db = getDb();
 
 export const load: PageServerLoad = async () => {
 	const userResponse = db
@@ -120,6 +116,7 @@ export const load: PageServerLoad = async () => {
 			age: user.age
 		})
 		.from(user)
+		.where(eq(user.id, 1))
 		.get();
 
 	return {
@@ -146,7 +143,7 @@ Put this code in a `src/routes/get-user/+page.svelte` file to render the user da
 {/if}
 ```
 
-If you add code like this to your app and deploy it, you should then be able to visit the `/api/add-user` in a browser to add a new row to your production database, then visit `/get-user` to see that user's data rendered to the page. If everything works as expected, that proves that database reads and writes are working as expected.
+If you add code like this to your app and deploy it with `fly deploy`, you should then be able to visit the `/api/add-user` in a browser to add a new row to your production database, then visit `/get-user` to see that user's data rendered to the page. If everything works as expected, that proves that database reads and writes are working as expected.
 
 ## Other resources
 

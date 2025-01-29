@@ -449,4 +449,5 @@ km_set_remote_image_as_featured_image( $post_id, $url, $attachment_data );
 
 The image that was downloaded in example 2 looks like this in the Media Library:
 
-<img src={downloadRemoteImage} alt="download remote image" />
+<!-- svelte-ignore a11y_img_redundant_alt -->
+<img src={downloadRemoteImage} alt="downloaded remote image file" />

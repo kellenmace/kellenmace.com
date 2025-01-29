@@ -24,6 +24,6 @@ As Linkpak Digital pointed out in the comments, the Advanced Code Editor plugin 
 1. Select the plugin/theme from the dropdown menu and click `select`
 1. Click the far-right button to download it
 
-<img src={advancedCodeEditor} alt="Advanced Code Editor screenshot" />
+<img src={advancedCodeEditor} alt="Advanced Code Editor" />
 
 <img src={comments} alt="comments" />
