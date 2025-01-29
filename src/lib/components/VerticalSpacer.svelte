@@ -1,7 +1,7 @@
 <script lang="ts">
 	export let size;
 
-	const sizeMappings = {
+	const sizeMappings: Record<number, string> = {
 		1: '.25rem',
 		2: '.5rem',
 		3: '1rem',
@@ -17,15 +17,7 @@
 		13: '15rem',
 		14: '20rem',
 		15: '30rem',
-	};
+	} as const;
 </script>
 
 <div style={`padding-top: ${sizeMappings[size]}`} />
-
-<!-- <div class="spacer-vertical" /> -->
-
-<!-- <style>
-.spacer-vertical {
-  padding-top: var(--size-8);
-}
-</style> -->
