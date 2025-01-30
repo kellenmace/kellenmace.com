@@ -37,18 +37,21 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
+import * as schema from './schema';
 
 export let db: ReturnType<typeof drizzle>;
 
 if (!building) {
 	const client = new Database(env.DATABASE_URL);
-	db = drizzle(client);
+	db = drizzle(client, { schema });
 }
 ```
 
 Here's why:
 The code that the `sv create` command initially creates in `src/lib/server/db/index.ts` calls `new Database(env.DATABASE_URL)` as soon as the file is loaded and tries to connect to the database. Since Fly Machines do not have access to Volumes at buildtime however, leaving this code in place will result in a build error since 
 better-sqlite3 will be unable to access the database on the volume. This new code confirms that a build is not in progress before attempting to connect to the database, which results in successful builds on Fly.
+
+Also, passing in `{ schema }` to `drizzle()` results in better TypeScript type inference and query validation.
 
 Follow the [Run a SvelteKit App](https://fly.io/docs/js/frameworks/svelte/) page of the Fly.io docs to configure your SvelteKit app to run on their platform. By the end of that guide, you should have your app deployed to Fly.
 
