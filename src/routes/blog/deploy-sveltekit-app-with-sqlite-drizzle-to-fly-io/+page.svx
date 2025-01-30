@@ -48,6 +48,7 @@ if (!building) {
 ```
 
 Here's why:
+
 The code that the `sv create` command initially creates in `src/lib/server/db/index.ts` calls `new Database(env.DATABASE_URL)` as soon as the file is loaded and tries to connect to the database. Since Fly Machines do not have access to Volumes at buildtime however, leaving this code in place will result in a build error since 
 better-sqlite3 will be unable to access the database on the volume. This new code confirms that a build is not in progress before attempting to connect to the database, which results in successful builds on Fly.
 
