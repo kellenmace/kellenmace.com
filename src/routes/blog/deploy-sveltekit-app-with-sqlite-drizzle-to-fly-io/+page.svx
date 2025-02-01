@@ -58,25 +58,56 @@ Follow the [Run a SvelteKit App](https://fly.io/docs/js/frameworks/svelte/) page
 
 A `data` volume should have also been automatically created and attached to your app. You can run `fly volumes list` to see a list of volumes and which virtual machine they are attached to. If you don't see a `data` volume, you can create one manually by following Fly's [Add volumes to an existing app](https://fly.io/docs/launch/volume-storage/#add-volumes-to-an-existing-app) guide.
 
+Remove the `ENV DATABASE_URL="file:///data/sqlite.db"` line from your Dockerfile, if present, since we don't need a `DATABASE_URL` environment variable to be defined at buildtime.
+
 ### 3. Set DATABASE_URL environment variable
 
 Run `fly secrets set DATABASE_URL=/data/production.db` to set a `DATABASE_URL` environment variable that specifies the location of your production database. See the [secrets docs](https://fly.io/docs/apps/secrets/) for more info.
 
 With this in place, better-sqlite3 will be able to access the database at `env.DATABASE_URL`.
 
-### 4. Copy local database into mounted volume
+### 4. Create production database
 
-At this point, we have created a Volume that is mounted to our app's filesystem at `/data` and set a `DATABASE_URL` environment variable to `/data/production.db` to tell better-sqlite3 to look for the database at that location. No such file exist at this point, though. Let's copy the database file from our local machine and save it as `/data/production.db` in our Fly Volume.
+At this point, we have created a Volume that is mounted to our app's filesystem at `/data` and set a `DATABASE_URL` environment variable to `/data/production.db` to tell better-sqlite3 to look for the database at that location. No such file exist at this point, though, so let's create it.
+
+We need to be able to run Drizzle's `push` command from inside of the Fly.io VM to create the database. Trying to do so at this point will fail though, since the `drizzle-kit` and `@types/better-sqlite3` NPM packages are dev dependencies and get deleted during the build process.
+
+Here's the approach I used for being able to run this one-time command on production:
+
+Uninstall the `drizzle-kit` and `@types/better-sqlite3` dev dependencies, then re-install them as regular, non-dev dependencies:
+`npm uninstall drizzle-kit @types/better-sqlite3 && npm install drizzle-kit @types/better-sqlite3`
+
+Add the commands below to your `Dockerfile` after the `FROM base` statement. The `RUN` command creates a `/app/src/lib/server/db` directory on the VM if one doesn't already exist. The `COPY` command copies the `schema.ts` file into that the `/app/src/lib/server/db` directory on production. When Drizzle's `push` command is run, it needs to have access to this database schema file.
+
+```Dockerfile
+# Create necessary directories
+RUN mkdir -p /app/src/lib/server/db
+
+COPY --from=build /app/src/lib/server/db/schema.ts /app/src/lib/server/db/schema.ts
+```
+
+Run `fly deploy` to re- deploy your app.
 
 Run `fly status` and ensure that your VM has a `STATE` of `started`. If it doesn't, copy the machine's ID and then run `fly machine start <machine-id>` to start it.
 
-Run `fly ssh sftp shell` to SSH into your Fly machine.
+Run `fly ssh console` to SSH into your Fly machine.
 
-Run `put local.db /data/production.db` to copy your local database to production.
+From inside of the `/app` directory, run `DATABASE_URL=/data/production.db npm run db:push` to create the new SQLite database file.
 
-Run `ls -l /data` to confirm the file was uploaded successfully.
+After the database is created, you can undo the changes you made above:
 
-If you don't want to copy your local database to production, you can opt for an alternative approach where you SSH into your Fly machine and run `npm run db:push` to create a new, empty database.
+- Run `npm uninstall drizzle-kit @types/better-sqlite3 && npm install -D drizzle-kit @types/better-sqlite3` to re-install the `drizzle-kit` and `@types/better-sqlite3` NPM packages as dev dependencies.
+- Delete the lines you added to your `Dockerfile` and save your changes.
+- Run `fly deploy` again to re-deploy your app.
+
+As an alternative approach, you could try to copy the database file from your local machine and save it as `/data/production.db` in your Fly Volume with steps like this:
+
+- Run `fly status` and ensure that your VM has a `STATE` of `started`. If it doesn't, copy the machine's ID and then run `fly machine start <machine-id>` to start it.
+- Run `fly ssh sftp shell` to SSH into your Fly machine.
+- Run `put local.db /data/production.db` to copy your local database to production.
+- Run `ls -l /data` to confirm the file was uploaded successfully.
+
+Your app should now be able to access the database.
 
 ### 5. Write queries
 
