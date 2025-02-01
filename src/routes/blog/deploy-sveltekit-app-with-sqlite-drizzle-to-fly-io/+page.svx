@@ -77,12 +77,13 @@ Here's the approach I used for being able to run this one-time command on produc
 Uninstall the `drizzle-kit` and `@types/better-sqlite3` dev dependencies, then re-install them as regular, non-dev dependencies:
 `npm uninstall drizzle-kit @types/better-sqlite3 && npm install drizzle-kit @types/better-sqlite3`
 
-Add the commands below to your `Dockerfile` after the `FROM base` statement. The `RUN` command creates a `/app/src/lib/server/db` directory on the VM if one doesn't already exist. The `COPY` command copies the `schema.ts` file into that the `/app/src/lib/server/db` directory on production. When Drizzle's `push` command is run, it needs to have access to this database schema file.
+Add the commands below to your `Dockerfile` after the `FROM base` statement. The `RUN` command creates a `/app/src/lib/server/db` directory on the VM if one doesn't already exist. The `COPY` commands copies a few files into that directory that are needed for Drizzle's `push` command: the `drizzle.config.ts` and `schema.ts` files.
 
 ```Dockerfile
 # Create necessary directories
 RUN mkdir -p /app/src/lib/server/db
 
+COPY --from=build /app/drizzle.config.ts /app/drizzle.config.ts
 COPY --from=build /app/src/lib/server/db/schema.ts /app/src/lib/server/db/schema.ts
 ```
 
