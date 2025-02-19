@@ -1,0 +1,228 @@
+---
+title: Supercronic Cron jobs for SvelteKit Apps on Fly.io
+date: "2025-02-19T22:13:08.961Z"
+---
+
+Fly.io's documentation includes a [Crontab with Supercronic](https://fly.io/docs/blueprints/supercronic/) page that details how to set up container-friendly cron jobs for your Fly.io app using [Supercronic](https://github.com/aptible/supercronic). I found it to be very generic though, and I had to modify lots of things to make it work for my SvelteKit app. Here's what I ended up with:
+
+## 1. Run `touch ./crontab` to create a crontab file in the root of your project and define your cron jobs.
+
+The example below shows how to include environment variables in your cron jobs and log errors to a `.log` file.
+
+```sh
+# Environment variables
+AUTH_TOKEN="Bearer ABC123"
+BASE_URL="https://influencermarketingjobs.net"
+
+# Cron jobs
+*/15 * * * * curl -s -H "Authorization: $AUTH_TOKEN" "$BASE_URL/api/cron-test" >> /data/cron-test.log 2>&1
+```
+
+## 2. Update Dockerfile to add Supercronic
+
+Here's what I ended up with:
+
+```Dockerfile
+# syntax = docker/dockerfile:1
+
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=22.13.0
+FROM node:${NODE_VERSION}-slim AS base
+
+LABEL fly_launch_runtime="SvelteKit"
+
+# SvelteKit app lives here
+WORKDIR /app
+
+# Set production environment
+ENV NODE_ENV="production"
+
+
+# Throw away build stage to reduce size of final image
+FROM base AS build
+
+# Install packages needed to build node modules and use curl
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    node-gyp \
+    pkg-config \
+    python-is-python3 \
+    curl \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create .env file for build-time environment variables
+# Environment variables must be passed in when `fly deploy` is run.
+RUN --mount=type=secret,id=SCRAPE_JOBS_API_SECRET \
+    --mount=type=secret,id=CRON_SECRET \
+    --mount=type=secret,id=SENDGRID_API_KEY \
+    --mount=type=secret,id=ADMIN_EMAIL_ADDRESS \
+    echo "SCRAPE_JOBS_API_SECRET=$(cat /run/secrets/SCRAPE_JOBS_API_SECRET)" > .env && \
+    echo "CRON_SECRET=$(cat /run/secrets/CRON_SECRET)" >> .env && \
+    echo "SENDGRID_API_KEY=$(cat /run/secrets/SENDGRID_API_KEY)" >> .env && \
+    echo "ADMIN_EMAIL_ADDRESS=$(cat /run/secrets/ADMIN_EMAIL_ADDRESS)" >> .env && \
+    export SCRAPE_JOBS_API_SECRET="$(cat /run/secrets/SCRAPE_JOBS_API_SECRET)" && \
+    export CRON_SECRET="$(cat /run/secrets/CRON_SECRET)" && \
+    export SENDGRID_API_KEY="$(cat /run/secrets/SENDGRID_API_KEY)" && \
+    export ADMIN_EMAIL_ADDRESS="$(cat /run/secrets/ADMIN_EMAIL_ADDRESS)"
+
+# Set Supercronic environment variables
+# Latest releases available at https://github.com/aptible/supercronic/releases
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
+    SUPERCRONIC=supercronic-linux-amd64
+
+# Install Supercronic
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+# Install node modules
+COPY .npmrc package-lock.json package.json ./
+RUN npm ci --include=dev
+
+# Copy application code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Remove development dependencies
+RUN npm prune --omit=dev
+
+
+# Final stage for app image
+FROM base
+
+# Install curl for cron jobs
+RUN apt-get update -qq && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy built application
+COPY --from=build /app/build /app/build
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/package.json /app
+COPY --from=build /app/crontab /app
+COPY --from=build /usr/local/bin/supercronic /usr/local/bin/supercronic
+
+# Setup sqlite3 on a separate volume
+RUN mkdir -p /data
+VOLUME /data
+
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+ENV DATABASE_URL="/data/production.db"
+CMD [ "npm", "run", "start" ]
+```
+
+This file does some of the things that the Fly.io documentation page does, but it also installs `curl` and `ca-certificates` during the build, which are necessary to download Supercronic from GitHub. It also installs `curl` again in the final stage so that it's available at runtime when cron jobs execute.
+
+Also note that instead of using `COPY crontab crontab` as shown in the Fly.io docs, I use `COPY --from=build /app/crontab /app` to copy the `crontab` file into the correct directory (`/app`).
+
+## 3. Update fly.toml file
+
+Update your Fly.toml file so that you have one `app` process for your app, and a separate `cron` process for your cron jobs (see the `[processes]` section, below).
+
+I ended up with a `fly.toml` file like this:
+
+```toml
+# fly.toml app configuration file generated for influencer-marketing-jobs on 2025-01-29T22:52:59-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'influencer-marketing-jobs'
+primary_region = 'iad'
+
+[build]
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = '1GB'
+  auto_extend_size_limit = '10GB'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Define both processes
+[processes]
+  app = "node build"
+  cron = "supercronic /app/crontab"
+
+# Configure the web service
+[[services]]
+  internal_port = 3000
+  processes = ["app"]
+  protocol = "tcp"
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+```
+
+Some of this code is based on Fly's [Supercronic](https://fly.io/docs/blueprints/supercronic/) docs, but I made some adjustments to make it work with my SvelteKit app.
+
+Note that the `processes = ["app"]` means that only the `app` process will be exposed to the outside world to serve web requests, whereas the `cron` process will not.
+
+This code will result in one Fly machine for your app, and a separate one for your cron jobs.
+
+## 4. Deploy app
+
+Run `fly deploy` to deploy your app, including the environment variables as shown below.
+
+```sh
+fly deploy \                
+  --build-secret SCRAPE_JOBS_API_SECRET=ABC123 \
+  --build-secret CRON_SECRET=ABC123 \
+  --build-secret RESEND_API_KEY=re_ABC123 \
+  --build-secret ADMIN_EMAIL_ADDRESS=fake.email@example.com
+```
+
+## 5. Scale app
+
+Run `fly scale count cron=1 app=1` to scale your `cron` and `app` processes to one instance each. If you have a setup that requires more instances of `app`, you can adjust that number as needed.
+
+## 6. Testing
+
+To test this, create a few SvelteKit API endpoints in your app, then adjust your `crontab` file to hit them via `curl`.
+
+You can secure your API endpoints by checking for the `CRON_SECRET` header value (which we set in the `crontab` example file, above), like this:
+
+```ts
+import { json, error } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { CRON_SECRET } from '$env/static/private';
+
+export const GET: RequestHandler = async ({ request }) => {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${CRON_SECRET}`) {
+        error(401, 'Unauthorized');
+    }
+
+    return json({ message: 'API endpoint was hit successfully!' });
+}
+```
+
+If cron jobs don't seem to be working, check the Live Logs for your machine in the Fly.io dashboard when the cron job runs to see if any errors are being logged.
+
+You can also run `fly ssh console` to SSH into your Fly machine, then `cat /data/cron-test.log` to see what's been logged to the cron job log file.
+
+## Conclusion
+
+You should now have cron jobs set up for your SvelteKit app on Fly.io. Enjoy!
