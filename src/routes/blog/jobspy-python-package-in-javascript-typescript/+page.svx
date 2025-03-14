@@ -10,6 +10,13 @@ Approach:
 1. Create an endpoint in Python that receives arguments as query string parameters, calls JobSpy's `scrape_jobs()` function and passes those arguments through to it, converts the result to JSON and returns the response.
 2. Call that endpoint from our TypeScript code, validate the data with [Zod](https://zod.dev/) and return the response.
 
+***
+## March 14, 2025 update:
+
+When I originally wrote this post, I had this code running in a Vercel serverless function. After that, I tried it as a Google Cloud Function. I found that in those serverless environments, I could scrape jobs from some sites like Indeed and LinkedIn okay, but attempts to scrape jobs from Glassdoor and ZipRecruiter failed. I switched to [hosting a FastAPI Python server on Fly.io](https://fly.io/docs/python/frameworks/fastapi/) and am now scraping jobs from all of those sites works.
+
+I'm not sure why the serverless attempts were failing- I tried updating the timeout, CPU, memory and other things, but Glassdoor and ZipRecruiter requests just hung and never resolved for some reason. They seem to be working well in a serverful environment, though.
+***
 
 ## Python endpoint code
 
