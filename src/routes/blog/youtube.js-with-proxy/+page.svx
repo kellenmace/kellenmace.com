@@ -23,7 +23,7 @@ const youtube = await Innertube.create({
 });
 ```
 
-## Futher Info
+## Further Info
 
 Node.js v20 or higher is required for this code to work, since native `fetch` with the `dispatcher` option was added to Node.js at that version.
 

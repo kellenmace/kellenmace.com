@@ -1,0 +1,85 @@
+---
+title: Add Hot Module Reloading (HMR) to a Svelte App in the WordPress Admin
+date: "2025-10-22T04:05:41.805Z"
+---
+
+If you have a Svelte application embedded in the WordPress admin area, adding Hot Module Reloading (HMR) can significantly improve your development workflow. HMR allows you to see changes in your Svelte components instantly without needing to refresh the entire page.
+
+## Steps to Add HMR to a Svelte App in the WordPress Admin
+
+### 1. Ensure app is rendering
+Make sure your Svelte app is being rendered successfully in the WordPress admin.
+
+### 2. Modify Vite Config
+
+In your `vite.config.ts` file, add these `host` and `cors` settings:
+
+```ts
+export default defineConfig({
+  // ...other config options
+  server: {
+    host: true, // Allow external access (e.g. from WP)
+    cors: true, // Allow WP site to request dev assets
+  },
+});
+```
+
+As the inline comments suggest, these settings allow your WordPress site to request assets from the Vite development server.
+
+## 3. Enqueue Vite assets when in dev mode
+
+Update your script enqueueing code like this:
+```php
+define('ASCEND_VERSION', '1.0.0');
+define('ASCEND_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+add_action('admin_enqueue_scripts', 'enqueue_admin_scripts');
+
+function enqueue_admin_scripts(): void
+{
+    $is_dev = wp_get_environment_type() === 'local';
+
+    if ($is_dev) {
+        // Load Vite dev server with HMR
+        wp_enqueue_script(
+            'ascend-vite-client',
+            'http://localhost:5173/@vite/client',
+            [],
+            null,
+            ['strategy' => 'defer']
+        );
+
+        // Load main script from Vite dev server
+        wp_enqueue_script(
+            'ascend-scripts',
+            'http://localhost:5173/src/main.ts',
+            [],
+            null,
+            ['strategy' => 'defer']
+        );
+    } else {
+        // Load production scripts
+        wp_enqueue_script(
+            'ascend-scripts',
+            ASCEND_PLUGIN_URL . 'dist/ascend.js',
+            [],
+            ASCEND_VERSION,
+            ['strategy' => 'defer']
+        );
+
+        // Load production styles
+        wp_enqueue_style(
+            'ascend-styles',
+            ASCEND_PLUGIN_URL . 'dist/ascend.css',
+            [],
+            ASCEND_VERSION
+        );
+    }
+}
+```
+
+* Replace `5173` with your Vite dev server port if it's different.
+* Replace `/src/main.ts` with the actual entry point of your Svelte app.
+* Replace the `dist/ascend.js` and `dist/ascend.css` paths with the actual paths to your production build files.
+
+Now when you run `npm run dev` (which should be set up as `"dev": "vite",` in your `package.json`), your Svelte app in the WordPress admin should support HMR, allowing you to see changes instantly as you develop.
