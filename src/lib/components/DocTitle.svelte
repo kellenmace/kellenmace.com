@@ -6,4 +6,5 @@
 
 <svelte:head>
 	<title>{docTitle}</title>
+	<meta property="og:title" content={docTitle} />
 </svelte:head>
