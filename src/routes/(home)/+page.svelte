@@ -19,14 +19,14 @@
 	<Sparkles />
 	<section class="hero">
 		<h1 class="hero-heading">Kellen Mace</h1>
-		<p class="tagline">Web dev, musician & entrepreneur</p>
+		<p class="tagline">Web developer & musician</p>
 	</section>
 	<VerticalSpacer size={8} />
 	<section class="bio">
 		<p>
-			Hi! I'm Kellen, founder of <a href="https://videomentions.com/">VideoMentions</a> &
-			<a href="https://influencermarketingjobs.net/">Influencer Marketing Jobs</a>, Engineering
-			Manager at <a href="https://wpengine.com/">WP Engine</a>, and musician.
+			Hi! I'm Kellen, web developer, musician, and engineering manager at <a
+				href="https://wpengine.com/">WP Engine</a
+			>.
 		</p>
 		<picture>
 			<source type="image/avif" srcset="/kellen-profile.avif" />
