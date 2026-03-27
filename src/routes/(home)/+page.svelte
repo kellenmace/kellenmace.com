@@ -23,11 +23,7 @@
 	</section>
 	<VerticalSpacer size={8} />
 	<section class="bio">
-		<p>
-			Hi! I'm Kellen, web developer, musician, and engineering manager at <a
-				href="https://wpengine.com/">WP Engine</a
-			>.
-		</p>
+		<p>Hi! I'm Kellen, senior software engineer and musician.</p>
 		<picture>
 			<source type="image/avif" srcset="/kellen-profile.avif" />
 			<img src="/kellen-profile.webp" alt="kellen mace profile" height="219" width="219" />
@@ -144,13 +140,14 @@
 	.bio p,
 	.bio a {
 		font-size: var(--font-size-5);
-		color: var(--gray-10);
+		color: var(--gray-9);
 		font-weight: var(--font-weight-7);
 	}
 	@media (min-width: 900px) {
 		.bio p,
 		.bio a {
-			font-size: var(--font-size-6);
+			font-size: var(--font-size-7);
+			font-weight: var(--font-weight-9);
 		}
 	}
 	.bio a {
