@@ -1,0 +1,96 @@
+---
+title: Open Google Meet Links in the Google Meet PWA with BetterTouchTool
+date: "2026-06-04T16:29:52.880Z"
+---
+
+<script>
+  import bettertouchtool from './bettertouchtool.png';
+</script>
+
+I click a lot of Google Meet links, and I wanted them to open directly in the Google Meet PWA instead of another Chrome tab. Here’s the BetterTouchTool setup that worked for me on macOS.
+
+##  Install the Google Meet PWA
+
+First, install Google Meet as a Chrome app/PWA:
+
+1. Open Chrome.
+
+2. Go to [https://meet.google.com](https://meet.google.com).
+
+3. Use Chrome’s install/open-in-app control in the address bar to install Google Meet.
+
+4. Confirm that this app exists:
+
+```bash
+ls "$HOME/Applications/Chrome Apps.localized/Google Meet.app"
+```
+
+## Get the Google Meet App ID
+
+Chrome PWAs have an app ID. You’ll need the app ID so Chrome can launch the Google Meet PWA directly.
+
+Run this:
+```bash
+plutil -p "$HOME/Applications/Chrome Apps.localized/Google Meet.app/Contents/Info.plist" | grep CrAppModeShortcutID
+```
+
+You should see something like:
+```bash
+"CrAppModeShortcutID" =>  "kjgfgldnnfoeklkmfkjfagphfepbbdan"
+```
+
+The value on the right is your Google Meet app ID.
+
+## Confirm the Command Works
+
+Before setting up BetterTouchTool, test the command manually:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" /
+--profile-directory=Default \
+--app-id=kjgfgldnnfoeklkmfkjfagphfepbbdan \
+--app-launch-url-for-shortcuts-menu-item="https://meet.google.com/abc-def-ghi"
+```
+
+Replace the app ID if yours is different.
+
+Replace `abc-def-ghi` with an actual meeting ID from one of your meetings.
+
+If your Chrome profile is not `Default`, open the `chrome://version` page in Chrome. Look for `Profile Path`. The final folder name is the value to use for `--profile-directory`.
+
+Running this command on the command line should open the Google Meet PWA launching and immediately joining the meeting.
+
+## Set Up BetterTouchTool
+
+In BetterTouchTool:
+
+1. Go to `Automations & Named & Other Triggers`.
+
+2. Add a new trigger.
+
+3. Choose `Did Open URL`.
+
+4. Set `URL` to `https://meet.google.com/*`
+
+5. Click the `Set BetterTouchTool Default Browser` button and set BTT as the default browser. This allows BTT to receive clicked URLs, take action on the ones that match your triggers, and let all other links pass through to your regular browser.
+
+6. Add a `Execute Shell Script / Task` action.
+
+7. For the `Script` field, use this script:
+
+```bash
+MEET_URL='{BTT_OPENED_URL}'
+
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --profile-directory=Default \
+    --app-id=kjgfgldnnfoeklkmfkjfagphfepbbdan \
+    --app-launch-url-for-shortcuts-menu-item="$MEET_URL"
+```
+
+Replace the `--app-id` value with your own Google Meet app ID.
+
+Your settings should look something like this:
+
+<img src={bettertouchtool} alt="BetterTouchTool settings" />
+
+Save the action and try clicking a Google Meet link. If everything is configured correctly, that meeting link should open immediately in the Google Meet app.
