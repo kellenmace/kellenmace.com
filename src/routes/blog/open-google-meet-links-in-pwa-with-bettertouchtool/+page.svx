@@ -87,7 +87,7 @@ MEET_URL='{BTT_OPENED_URL}'
   --app-launch-url-for-shortcuts-menu-item="$MEET_URL"
 ```
 
-Replace the `--app-id` value with your own Google Meet app ID.
+Replace the `--app-id` value with your Google Meet app ID and replace `--profile-directory` if your Chrome profile is not `Default`.
 
 Your settings should look something like this:
 

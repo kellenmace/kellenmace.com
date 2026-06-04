@@ -1,18 +1,25 @@
 import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { mdsvex } from 'mdsvex';
+import { code_highlighter, mdsvex } from 'mdsvex';
+
+const highlightCode = async (code, lang) => {
+	const highlighted = await code_highlighter(code, lang);
+
+	return highlighted.replace(/\\/g, '\\\\');
+};
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: [
-		mdsvex({ extensions: ['.md', '.svx'], layout: './src/routes/blog/Layout.svelte' }),
+		mdsvex({
+			extensions: ['.md', '.svx'],
+			layout: './src/routes/blog/Layout.svelte',
+			highlight: { highlighter: highlightCode },
+		}),
 		vitePreprocess(),
 	],
 	extensions: ['.svelte', '.md', '.svx'],
 	kit: {
-		// adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
-		// If your environment is not supported or you settled on a specific environment, switch out the adapter.
-		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
 		adapter: adapter(),
 	},
 };
