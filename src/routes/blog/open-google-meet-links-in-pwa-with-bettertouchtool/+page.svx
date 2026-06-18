@@ -94,3 +94,7 @@ Your settings should look something like this:
 <img src={bettertouchtool} alt="BetterTouchTool settings" />
 
 Save the action and try clicking a Google Meet link. If everything is configured correctly, that meeting link should open immediately in the Google Meet app.
+
+## Ensuring that non-Google Meet links work
+
+If you encounter any issues related to non-Google Meet links not opening in your regular browser, you can click on the trigger in BTT, open the `Global Settings / Defaults` panel, and select your browser from the dropdown, or otherwise select the `Custom Open Command` option and enter a command such as `open -a "/Applications/Google Chrome.app" {url}`. That should result in BTT routing non-Google Meet links to your regular browser.
